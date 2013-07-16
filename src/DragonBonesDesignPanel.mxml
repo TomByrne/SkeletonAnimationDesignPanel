@@ -85,6 +85,18 @@
 					}
 				}
 				
+				
+				var contextMenu:ContextMenu = new ContextMenu();
+				contextMenu.hideBuiltInItems();
+				if(Capabilities.isDebugger){
+					var reloadItem:ContextMenuItem = new ContextMenuItem("Reload JSFL")
+					reloadItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e){
+						JSFLProxy.getInstance().reloadJSFL();
+					});
+					contextMenu.customItems.push(reloadItem);
+				}
+				this.contextMenu = contextMenu;
+				
 				stage.frameRate = 60;
 			}
 			

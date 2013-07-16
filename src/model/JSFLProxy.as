@@ -18,12 +18,15 @@
 	 */
 	public class JSFLProxy
 	{
+		public static const RELOAD_JSFL:String = "reloadJSFL";
+		
 		public static const GET_ARMATURE_LIST:String = "getArmatureList";
 		public static const GENERATE_ARMATURE:String = "generateArmature";
 		public static const CLEAR_TEXTURE_SWFITEM:String = "clearTextureSWFItem";
 		public static const ADD_TEXTURE_TO_SWFITEM:String = "addTextureToSWFItem";
 		public static const EXPORT_SWF:String = "exportSWF";
 		public static const COPY_MOVEMENT:String = "copyArmatureFrom";
+		
 		
 		private static const LOCAL_CONNECTION_NAME:String = "_DragonBonesDesignPanelLocalConnection";
 		private static const CONNECTION_METHOD_NAME:String = "connectionMethodName";
@@ -343,6 +346,14 @@
 			if (e.level == STATUS) 
 			{
 			}
+		}
+		
+		
+		/**
+		 * Reloads JSFL (for debugging purposes)
+		 */
+		public function reloadJSFL():void{
+			runJSFLCode(RELOAD_JSFL, 'fl.runScript(fl.configURI+"/WindowSWF/'+JSFL_URL+'");');
 		}
 		
 		/**

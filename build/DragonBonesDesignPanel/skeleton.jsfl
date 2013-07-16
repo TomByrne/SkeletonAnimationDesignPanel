@@ -1,4 +1,6 @@
-﻿var dragonBones = {};
+﻿var didExist = (dragonBones!=null);
+
+var dragonBones = {};
 (function(){
 
 var SKELETON = "skeleton";
@@ -135,6 +137,24 @@ function isBlankLayer(_layer){
 	return true;
 }
 
+//to determine whether the layer is a single item layer (all frames considered the same item)
+function isMultiItemLayer(_layer){
+	var symbol = null;
+	var foundSymbol = null;
+	for each(var _frame in filterKeyFrames(_layer.frames)){
+		for each(var _element in _frame.elements){
+			if(symbol = getBoneSymbol(_element)){
+				if(foundSymbol==null){
+					foundSymbol = symbol;
+				}else if(foundSymbol!=symbol){
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
 //filter key frames from a frame array
 function filterKeyFrames(_frames){
 	var _framesCopy = [];
@@ -172,9 +192,9 @@ function formatSameName(_obj, _dic){
 		_name = _obj.name + _i;
 		_i ++;
 	}
-	if(_i > 0){
+	/*if(_i > 0){
 		_obj.name = _name;
-	}
+	}*/
 	_dic[_name] = true;
 	return _name;
 }
@@ -230,7 +250,7 @@ function isMainLayer(_layer){
 //To determine whether the item is valide armature.
 //If yes, return mainLayer and boneLayers
 function isArmatureItem(_item, _isChildArmature){
-	if(_item.symbolType != MOVIE_CLIP && _item.symbolType != GRAPHIC)
+	if(_item.itemType != MOVIE_CLIP && _item.itemType != GRAPHIC)
 	{
 		return null;
 	}
@@ -311,24 +331,22 @@ function getMainFrameList(_keyFrames){
 }
 
 //filter bone symbol from all elements in a frame.
-function getBoneSymbol(_elements){
-	for each(var _element in _elements){
-		if(_element.symbolType == MOVIE_CLIP || _element.symbolType == GRAPHIC || _element.instanceType == BITMAP){
-			return _element;
-		}
+function getBoneSymbol(element){
+	if(element.symbolType == MOVIE_CLIP || element.symbolType == GRAPHIC || element.instanceType == BITMAP){
+		return element;
 	}
 	return null;
 }
 
 //get bone by name from a frame 
-function getBoneFromLayers(layers, _boneName, _frameIndex){
+/*function getBoneFromLayers(layers, _boneName, _frameIndex){
 	for each(var _layer in layers){
 		if(_layer.name == _boneName){
 			return getBoneSymbol(_layer.frames[_frameIndex].elements);
 		}
 	}
 	return null;
-}
+}*/
 
 //write armature connection data
 function setArmatureConnection(_item, _data){
@@ -458,9 +476,14 @@ function generateMovement(_item, _mainFrame, _layers){
 	var _boneName;
 	
 	for each(var _layer in _layers){
-		_boneName = formatName(_layer);
-		_boneZDic[_boneName] = _boneZDic[_boneName] || [];
-		_movementBoneXML = null;
+		_multiItemLayer = isMultiItemLayer(_layer);
+		if(!_multiItemLayer){
+			_boneName = formatName(_layer, _multiItemLayer);
+			_boneZDic[_boneName] = _boneZDic[_boneName] || [];
+			_movementBoneXML = null;
+		}else{
+			var _movementBoneXMLLookup = {}; 
+		}
 		for each(var _frame in filterKeyFrames(_layer.frames.slice(_start, _start + _duration))){
 			if(_frame.startFrame < _start){
 				_frameStart = 0;
@@ -472,39 +495,47 @@ function generateMovement(_item, _mainFrame, _layers){
 				_frameStart = _frame.startFrame - _start;
 				_frameDuration= _frame.duration;
 			}
-			_symbol = getBoneSymbol(_frame.elements);
-			if(!_symbol){
-				continue;
-			}
-			if(!_movementBoneXML){
-				_movementBoneXML = getMovementBoneXML(_movementXML, _boneName, _item);
-			}
-			for(_i = _frameStart ;_i < _frameStart + _frameDuration;_i ++){
-				_z = _zList[_i];
-				if(isNaN(_z)){
-					_zList[_i] = _z = 0;
-				}else{
-					_zList[_i] = ++_z;
+			for(var i=0; i<_frame.elements.length; ++i){
+				var _element = _frame.elements[i];
+				_symbol = getBoneSymbol(_element);
+				if(!_symbol){
+					continue;
 				}
-			}
-			_z = _zList[_frameStart];
-			_boneList = _boneZDic[_boneName];
-			for(_i = _frameStart;_i < _frameStart + _frameDuration;_i ++){
-				if(!isNaN(_boneList[_i])){
-					_boneNameDic[_boneName] = true;
-					_boneName = formatSameName(_layer, _boneNameDic);
-					_boneList = _boneZDic[_boneName] = [];
+				if(_multiItemLayer){
+					_boneName = (_element.name || _layer.name+"-"+i);
+					_boneZDic[_boneName] = _boneZDic[_boneName] || [];
+					_movementBoneXML = _movementBoneXMLLookup[_boneName];
+				}
+				if(!_movementBoneXML){
 					_movementBoneXML = getMovementBoneXML(_movementXML, _boneName, _item);
 				}
-				_boneList[_i] = _z;
+				for(_i = _frameStart ;_i < _frameStart + _frameDuration;_i ++){
+					_z = _zList[_i];
+					if(isNaN(_z)){
+						_zList[_i] = _z = 0;
+					}else{
+						_zList[_i] = ++_z;
+					}
+				}
+				_z = _zList[_frameStart];
+				_boneList = _boneZDic[_boneName];
+				for(_i = _frameStart;_i < _frameStart + _frameDuration;_i ++){
+					if(!isNaN(_boneList[_i])){
+						_boneNameDic[_boneName] = true;
+						_boneName = formatSameName(_layer, _boneNameDic);
+						_boneList = _boneZDic[_boneName] = [];
+						_movementBoneXML = getMovementBoneXML(_movementXML, _boneName, _item);
+					}
+					_boneList[_i] = _z;
+				}
+				
+				if(_frame.tweenType == "motion object"){
+					//
+					break;
+				}
+				_frameXML = generateFrame(_frame, _boneName, _symbol, _z, _noAutoEasing);
+				addFrameToMovementBone(_frameXML, _frameStart, _frameDuration, _movementBoneXML);
 			}
-			
-			if(_frame.tweenType == "motion object"){
-				//
-				break;
-			}
-			_frameXML = generateFrame(_frame, _boneName, _symbol, _z, _noAutoEasing);
-			addFrameToMovementBone(_frameXML, _frameStart, _frameDuration, _movementBoneXML);
 		}
 	}
 	
@@ -823,7 +854,8 @@ dragonBones.getArmatureList = function(_isSelected, armatureNames){
 	}
 	
 	var _xml = <{ARMATURES} {A_NAME}={currentDomName}/>;
-	for each(var _item in _items){
+	for(var i=0; i<_items.length; ++i){
+		var _item = _items[i];
 		if(isArmatureItem(_item)){
 			formatName(_item);
 			var _itemXML = <{ARMATURE} {A_NAME}={_item.name} scale ={1}/>
@@ -1064,13 +1096,15 @@ dragonBones.copyMovement = function(targetArmatureName, sourceArmatureName, sour
 		targetMark[boneName] = targetTextureList;
 		for each(var frame in filterKeyFrames(layer.frames))
 		{
-			var boneSymbol = getBoneSymbol(frame.elements);
-			if(boneSymbol)
-			{
-				var textureName = boneSymbol.libraryItem.name;
-				if(targetTextureList.indexOf(textureName) == -1)
+			for each(var element in _frame.elements){
+				var boneSymbol = getBoneSymbol(element);
+				if(boneSymbol)
 				{
-					targetTextureList.push(textureName);
+					var textureName = boneSymbol.libraryItem.name;
+					if(targetTextureList.indexOf(textureName) == -1)
+					{
+						targetTextureList.push(textureName);
+					}
 				}
 			}
 		}
@@ -1142,53 +1176,57 @@ dragonBones.copyMovement = function(targetArmatureName, sourceArmatureName, sour
 			{
 				var frame = frames[targetStartFrame + currentFrame];
 				currentFrame += Number(frameXML.@[A_DURATION]);
-				var boneSymbol = getBoneSymbol(frame.elements);
-				if(!boneSymbol)
-				{
-					continue;
+				for each(var element in frame.elements){
+					var boneSymbol = getBoneSymbol(element);
+					if(!boneSymbol)
+					{
+						continue;
+					}
+					var textureName = boneSymbol.libraryItem.name;
+					var subListID = copyTextureList.indexOf(textureName);
+					if(subListID == -1)
+					{
+						subListID = copyTextureList.length;
+						copyTextureList.push(textureName);
+					}
+					if(subListID >= targetTextureList.length)
+					{
+						subListID = targetTextureList.length - 1;
+					}
+					textureName = targetTextureList[subListID];
+					targetTimeline.currentFrame = frame.startFrame;
+					currentDom.selectNone();
+					boneSymbol.selected = true;
+					currentDom.swapElement(textureName);
+					boneSymbol = currentDom.selection[0];
+					
+					helpPoint.x = Number(frameXML.@[A_X]);
+					helpPoint.y = Number(frameXML.@[A_Y]);
+					helpPoint.scaleX = Number(frameXML.@[A_SCALE_X]);
+					helpPoint.scaleY = Number(frameXML.@[A_SCALE_Y]);
+					helpPoint.skewX = Number(frameXML.@[A_SKEW_X]) / 180 * Math.PI;
+					helpPoint.skewY = Number(frameXML.@[A_SKEW_Y]) / 180 * Math.PI;
+					helpPoint.pivotX = Number(frameXML.@[A_PIVOT_X]);
+					helpPoint.pivotY = Number(frameXML.@[A_PIVOT_Y]);
+					
+					var matrix = boneSymbol.matrix;
+					matrix.a = helpPoint.scaleX * Math.cos(helpPoint.skewY)
+					matrix.b = helpPoint.scaleX * Math.sin(helpPoint.skewY)
+					matrix.c = -helpPoint.scaleY * Math.sin(helpPoint.skewX);
+					matrix.d = helpPoint.scaleY * Math.cos(helpPoint.skewX);
+					matrix.tx = helpPoint.x - (matrix.a * helpPoint.pivotX + matrix.c * helpPoint.pivotY);
+					matrix.ty = helpPoint.y - (matrix.b * helpPoint.pivotX + matrix.d * helpPoint.pivotY);
+					
+					helpPoint.x = helpPoint.pivotX;
+					helpPoint.y = helpPoint.pivotY;
+					boneSymbol.matrix = matrix;
+					boneSymbol.setTransformationPoint(helpPoint);
 				}
-				var textureName = boneSymbol.libraryItem.name;
-				var subListID = copyTextureList.indexOf(textureName);
-				if(subListID == -1)
-				{
-					subListID = copyTextureList.length;
-					copyTextureList.push(textureName);
-				}
-				if(subListID >= targetTextureList.length)
-				{
-					subListID = targetTextureList.length - 1;
-				}
-				textureName = targetTextureList[subListID];
-				targetTimeline.currentFrame = frame.startFrame;
-				currentDom.selectNone();
-				boneSymbol.selected = true;
-				currentDom.swapElement(textureName);
-				boneSymbol = currentDom.selection[0];
-				
-				helpPoint.x = Number(frameXML.@[A_X]);
-				helpPoint.y = Number(frameXML.@[A_Y]);
-				helpPoint.scaleX = Number(frameXML.@[A_SCALE_X]);
-				helpPoint.scaleY = Number(frameXML.@[A_SCALE_Y]);
-				helpPoint.skewX = Number(frameXML.@[A_SKEW_X]) / 180 * Math.PI;
-				helpPoint.skewY = Number(frameXML.@[A_SKEW_Y]) / 180 * Math.PI;
-				helpPoint.pivotX = Number(frameXML.@[A_PIVOT_X]);
-				helpPoint.pivotY = Number(frameXML.@[A_PIVOT_Y]);
-				
-				var matrix = boneSymbol.matrix;
-				matrix.a = helpPoint.scaleX * Math.cos(helpPoint.skewY)
-				matrix.b = helpPoint.scaleX * Math.sin(helpPoint.skewY)
-				matrix.c = -helpPoint.scaleY * Math.sin(helpPoint.skewX);
-				matrix.d = helpPoint.scaleY * Math.cos(helpPoint.skewX);
-				matrix.tx = helpPoint.x - (matrix.a * helpPoint.pivotX + matrix.c * helpPoint.pivotY);
-				matrix.ty = helpPoint.y - (matrix.b * helpPoint.pivotX + matrix.d * helpPoint.pivotY);
-				
-				helpPoint.x = helpPoint.pivotX;
-				helpPoint.y = helpPoint.pivotY;
-				boneSymbol.matrix = matrix;
-				boneSymbol.setTransformationPoint(helpPoint);
 			}
 		}
 	}
 }
 
 })();
+
+if(didExist)fl.trace("DragonBones JSFL reloaded");
