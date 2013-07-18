@@ -47,6 +47,7 @@ var A_TWEEN_ROTATE ="twR";
 var A_IS_ARMATURE = "isArmature";
 var A_MOVEMENT = "mov";
 var A_VISIBLE = "visible";
+var A_MASK = "mask";
 
 var A_WIDTH = "width";
 var A_HEIGHT = "height";
@@ -260,18 +261,18 @@ function isArmatureItem(_item, _isChildArmature){
 		switch(_layer.layerType){
 			case "folder":
 			case "guide":
-			case "mask":
+			//case "mask":
 				break;
 			default:
 				if(isMainLayer(_layer)){
 					_mainLayer = _layer;
 				}else if(!isBlankLayer(_layer)){
-					_layersFiltered.unshift(_layer);
+					//_layersFiltered.unshift(_layer);
+					_layersFiltered.push(_layer); // so masks are encountered before masked
 				}
 				break;
 		}
 	}
-	
 	if(_layersFiltered.length > 0){
 		if(_mainLayer){
 			_layersFiltered.unshift(_mainLayer);
@@ -474,8 +475,10 @@ function generateMovement(_item, _mainFrame, _layers){
 	var _frameXML;
 	var _symbol;
 	var _boneName;
+	var _lastMaskName;
 	
 	for each(var _layer in _layers){
+		_boneName = null;
 		_multiItemLayer = isMultiItemLayer(_layer);
 		if(!_multiItemLayer){
 			_boneName = formatName(_layer, _multiItemLayer);
@@ -508,6 +511,7 @@ function generateMovement(_item, _mainFrame, _layers){
 				}
 				if(!_movementBoneXML){
 					_movementBoneXML = getMovementBoneXML(_movementXML, _boneName, _item);
+					if(_multiItemLayer)_movementBoneXMLLookup[_boneName] = _movementBoneXML;
 				}
 				for(_i = _frameStart ;_i < _frameStart + _frameDuration;_i ++){
 					_z = _zList[_i];
@@ -533,10 +537,11 @@ function generateMovement(_item, _mainFrame, _layers){
 					//
 					break;
 				}
-				_frameXML = generateFrame(_frame, _boneName, _symbol, _z, _noAutoEasing);
+				_frameXML = generateFrame(_frame, _boneName, _symbol, _z, _noAutoEasing, (_layer.layerType=="masked" && _lastMaskName)?_lastMaskName:null);
 				addFrameToMovementBone(_frameXML, _frameStart, _frameDuration, _movementBoneXML);
 			}
 		}
+		if(_layer.layerType=="mask")_lastMaskName = _boneName;
 	}
 	
 	var _prevStart;
@@ -602,7 +607,7 @@ function generateMovement(_item, _mainFrame, _layers){
 	animationXML.appendChild(_movementXML);
 }
 
-function generateFrame(_frame, _boneName, _symbol, _z, _noAutoEasing){
+function generateFrame(_frame, _boneName, _symbol, _z, _noAutoEasing, _maskName){
 	var _frameXML = <{FRAME}/>;
 	_frameXML.@[A_X] = formatNumber(_symbol.transformX);
 	_frameXML.@[A_Y] = formatNumber(_symbol.transformY);
@@ -659,6 +664,7 @@ function generateFrame(_frame, _boneName, _symbol, _z, _noAutoEasing){
 	_frameXML.@[A_Z] = _z;
 	
 	var _boneXML = getBoneXML(_boneName, _frameXML);
+	if(_maskName)_boneXML.@[A_MASK] = _maskName;
 	
 	var _imageItem = _symbol.libraryItem;
 	var _imageName = formatName(_imageItem);
@@ -885,7 +891,7 @@ dragonBones.generateArmature = function(_armatureName, _scale, _isNewXML, _isChi
 	armaturesXML.appendChild(armatureXML);
 	animationXML = <{ANIMATION} {A_NAME}={_armatureName}/>;
 	armatureConnectionXML = _item.hasData(ARMATURE_DATA)?XML(_item.getData(ARMATURE_DATA)):armatureXML;
-	
+
 	var _layersFiltered = isArmatureItem(_item, _isChildArmature);
 	var _mainLayer = _layersFiltered.shift();
 	var _mainFrameList = getMainFrameList(filterKeyFrames(_mainLayer.frames));
