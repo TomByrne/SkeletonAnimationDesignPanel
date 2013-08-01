@@ -158,6 +158,7 @@ package model
 			_exportScaleID = hasData(EXPORT_SCALE_ID)?getData(EXPORT_SCALE_ID):5;
 			
 			_boneHighlightColor = hasData(BONE_HIGHLIGHT_COLOR)?getData(BONE_HIGHLIGHT_COLOR):0xFF0000;
+			_backgroundColor = hasData(BACKGROUND_COLOR)?getData(BACKGROUND_COLOR):0xFFFFFF;
 			
 			if(hasData(LANGUAGE_ID))
 			{

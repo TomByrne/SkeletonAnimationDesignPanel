@@ -19,6 +19,8 @@ var COLOR_TRANSFORM = "colorTransform";
 var TEXTURE_ATLAS = "TextureAtlas";
 var SUB_TEXTURE = "SubTexture";
 
+var A_BACKGROUND_COLOR = "backgroundColor";
+
 var A_FRAME_RATE = "frameRate";
 var A_NAME = "name";
 var A_START = "st";
@@ -550,7 +552,6 @@ function generateMovement(_item, _mainFrame, _layers){
 			for each(var maskedXML in _maskedFrames){
 				maskedXML.@[A_MASK] = _boneName;
 			}
-				fl.trace("MASK: "+_boneName);
 			_maskedFrames = null;
 		}else if(_layer.layerType!="masked"){
 			_maskedFrames = null;
@@ -830,6 +831,15 @@ function addFrameToMovementBone(_frameXML, _start, _duration, _movementBoneXML){
 		}
 	}
 	_movementBoneXML.appendChild(_frameXML);
+}
+dragonBones.getDocumentInfo = function(){
+	if(!currentDom)return "false";
+
+	var ret = <document/>;
+	ret.@[A_WIDTH] = currentDom.width;
+	ret.@[A_HEIGHT] = currentDom.height;
+	ret.@[A_BACKGROUND_COLOR] = currentDom.backgroundColor;
+	return ret.toXMLString();
 }
 
 dragonBones.getArmatureList = function(_isSelected, armatureNames){

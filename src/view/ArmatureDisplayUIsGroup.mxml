@@ -7,22 +7,22 @@
 		 >
 	<fx:Script>
 		<![CDATA[
+			import flash.filters.GlowFilter;
+			import flash.ui.Mouse;
+			import flash.ui.MouseCursor;
+			
+			import mx.effects.Pause;
+			
 			import dragonBones.Armature;
 			import dragonBones.Bone;
 			import dragonBones.objects.BoneData;
 			import dragonBones.utils.dragonBones_internal;
-			
-			import flash.filters.GlowFilter;
-			import flash.ui.Mouse;
-			import flash.ui.MouseCursor;
 			
 			import message.Message;
 			import message.MessageDispatcher;
 			
 			import model.ImportDataProxy;
 			import model.SettingDataProxy;
-			
-			import mx.effects.Pause;
 			
 			import utils.getPointTarget;
 			
@@ -158,6 +158,7 @@
 				MessageDispatcher.addEventListener(MessageDispatcher.MOVEMENT_START, commandHandler);
 				MessageDispatcher.addEventListener(MessageDispatcher.MOVEMENT_COMPLETE, commandHandler);
 				
+				background.color = SettingDataProxy.getInstance().backgroundColor;
 			}
 			
 			private function settingHandler(e:Message):void
@@ -172,6 +173,9 @@
 						break;
 					case SettingDataProxy.LANGUAGE_ID:
 						updatePlayAndPauseBtn();
+						break;
+					case SettingDataProxy.BACKGROUND_COLOR:
+						background.color = value as int;
 						break;
 				}
 			}
@@ -600,6 +604,14 @@
 			
 		]]>
 	</fx:Script>
+	<s:Rect width="100%" height="100%">
+		<s:stroke>
+			<s:SolidColorStroke color="0x000000" weight="1"/>
+		</s:stroke>
+		<s:fill>
+			<s:SolidColor id="background" color="0xffffff"/>
+		</s:fill>
+	</s:Rect>
 	<s:Scroller id="scrollerViewer" width="100%" height="100%" horizontalScrollPolicy="off" verticalScrollPolicy="off">
 		<s:Group>
 			<s:Group id="viewContainerGroup">
@@ -617,9 +629,4 @@
 									   selectedColor="@{SettingDataProxy.getInstance().boneHighlightColor}"/>
 	</s:HGroup>
 	<s:Button id="playBtn" right="2" top="2" width="22" height="22"/>
-	<s:Rect width="100%" height="100%">
-		<s:stroke>
-			<s:SolidColorStroke color="0x000000" weight="1"/>
-		</s:stroke>
-	</s:Rect>
 </s:Group>
