@@ -475,9 +475,10 @@ function generateMovement(_item, _mainFrame, _layers){
 	var _frameXML;
 	var _symbol;
 	var _boneName;
-	var _lastMaskName;
+	var _maskedFrames;
 	
-	for each(var _layer in _layers){
+	for(var j=_layers.length-1; j>=0; --j){
+		var _layer = _layers[j];
 		_boneName = null;
 		_multiItemLayer = isMultiItemLayer(_layer);
 		if(!_multiItemLayer){
@@ -516,9 +517,9 @@ function generateMovement(_item, _mainFrame, _layers){
 				for(_i = _frameStart ;_i < _frameStart + _frameDuration;_i ++){
 					_z = _zList[_i];
 					if(isNaN(_z)){
-						_zList[_i] = _z = 0;
+						_zList[_i] = _z = _layer.length-1;
 					}else{
-						_zList[_i] = ++_z;
+						_zList[_i] = --_z;
 					}
 				}
 				_z = _zList[_frameStart];
@@ -537,11 +538,23 @@ function generateMovement(_item, _mainFrame, _layers){
 					//
 					break;
 				}
-				_frameXML = generateFrame(_frame, _boneName, _symbol, _z, _noAutoEasing, (_layer.layerType=="masked" && _lastMaskName)?_lastMaskName:null);
+				_frameXML = generateFrame(_frame, _boneName, _symbol, _z, _noAutoEasing);
+				if(_layer.layerType=="masked"){
+					if(!_maskedFrames)_maskedFrames = [];
+					_maskedFrames.push(getBoneXML(_boneName, _frameXML));
+				}
 				addFrameToMovementBone(_frameXML, _frameStart, _frameDuration, _movementBoneXML);
 			}
 		}
-		if(_layer.layerType=="mask")_lastMaskName = _boneName;
+		if(_layer.layerType=="mask" && _maskedFrames){
+			for each(var maskedXML in _maskedFrames){
+				maskedXML.@[A_MASK] = _boneName;
+			}
+				fl.trace("MASK: "+_boneName);
+			_maskedFrames = null;
+		}else if(_layer.layerType!="masked"){
+			_maskedFrames = null;
+		}
 	}
 	
 	var _prevStart;
@@ -607,7 +620,7 @@ function generateMovement(_item, _mainFrame, _layers){
 	animationXML.appendChild(_movementXML);
 }
 
-function generateFrame(_frame, _boneName, _symbol, _z, _noAutoEasing, _maskName){
+function generateFrame(_frame, _boneName, _symbol, _z, _noAutoEasing){
 	var _frameXML = <{FRAME}/>;
 	_frameXML.@[A_X] = formatNumber(_symbol.transformX);
 	_frameXML.@[A_Y] = formatNumber(_symbol.transformY);
@@ -664,7 +677,6 @@ function generateFrame(_frame, _boneName, _symbol, _z, _noAutoEasing, _maskName)
 	_frameXML.@[A_Z] = _z;
 	
 	var _boneXML = getBoneXML(_boneName, _frameXML);
-	if(_maskName)_boneXML.@[A_MASK] = _maskName;
 	
 	var _imageItem = _symbol.libraryItem;
 	var _imageName = formatName(_imageItem);
