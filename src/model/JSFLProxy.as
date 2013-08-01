@@ -26,6 +26,7 @@
 		public static const ADD_TEXTURE_TO_SWFITEM:String = "addTextureToSWFItem";
 		public static const EXPORT_SWF:String = "exportSWF";
 		public static const COPY_MOVEMENT:String = "copyArmatureFrom";
+		public static const GET_DOCUMENT_INFO:String = "getDocumentInfo";
 		
 		
 		private static const LOCAL_CONNECTION_NAME:String = "_DragonBonesDesignPanelLocalConnection";
@@ -354,6 +355,14 @@
 		 */
 		public function reloadJSFL():void{
 			runJSFLCode(RELOAD_JSFL, 'fl.runScript(fl.configURI+"/WindowSWF/'+JSFL_URL+'");');
+		}
+		
+		
+		/**
+		 * Reloads JSFL (for debugging purposes)
+		 */
+		public function getDocumentInfo():void{
+			runJSFLMethod(GET_DOCUMENT_INFO, "dragonBones.getDocumentInfo");
 		}
 		
 		/**

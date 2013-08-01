@@ -39,9 +39,28 @@
 			{
 				return;
 			}
+			//Load document information to prefill settings
+			MessageDispatcher.addEventListener(JSFLProxy.GET_DOCUMENT_INFO, getDocumentInfoHandler);
+			_jsflProxy.getDocumentInfo();
+			
 			//Load bone elements from Flash Pro
 			MessageDispatcher.addEventListener(JSFLProxy.GET_ARMATURE_LIST, getArmatureListHandler);
 			_jsflProxy.getArmatureList(isSelected, armatureNames);
+		}
+		private function getDocumentInfoHandler(e:Message):void
+		{
+			var result:String = e.parameters[0];
+			if(result == "false")
+			{
+				// failed to get doc info
+			}
+			else
+			{
+				var settings:SettingDataProxy = SettingDataProxy.getInstance();
+				var _resultXML:XML = XML(result);
+				var backgroundColor:int = parseInt(String(_resultXML.attribute(ConstValues.A_BACKGROUND_COLOR)).substr(1), 16);
+				settings.backgroundColor = backgroundColor;;
+			}
 		}
 		
 		private function getArmatureListHandler(e:Message):void
