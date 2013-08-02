@@ -16,7 +16,7 @@ package control
 	import message.MessageDispatcher;
 	
 	import model.JSFLProxy;
-	import model.SkeletonXMLProxy;
+	import model.XMLDataProxy;
 	
 	import modifySWF.modify;
 	
@@ -26,7 +26,8 @@ package control
 		
 		private var _urlLoader:URLLoader;
 		
-		private var _skeletonXMLProxy:SkeletonXMLProxy;
+		private var _xmlDataProxy:XMLDataProxy;
+		private var _subTextureList:Vector.<String>;
 		private var _textureBytes:ByteArray;
 		
 		public function FLAExportSWFCommand()
@@ -35,9 +36,10 @@ package control
 			_urlLoader.dataFormat = URLLoaderDataFormat.BINARY;
 		}
 		
-		public function exportSWF(skeletonXMLProxy:SkeletonXMLProxy):void
+		public function exportSWF(xmlDataProxy:XMLDataProxy, subTextureList:Vector.<String>):void
 		{
-			_skeletonXMLProxy = skeletonXMLProxy;
+			_xmlDataProxy = xmlDataProxy;
+			_subTextureList = subTextureList;
 			MessageDispatcher.addEventListener(JSFLProxy.EXPORT_SWF, jsflProxyHandler);
 			JSFLProxy.getInstance().exportSWF();
 		}
@@ -52,6 +54,10 @@ package control
 				_urlLoader.addEventListener(IOErrorEvent.IO_ERROR, urlLoaderHandler);
 				_urlLoader.addEventListener(Event.COMPLETE, urlLoaderHandler);
 				_urlLoader.load(new URLRequest(swfURL));
+			}
+			else
+			{
+				MessageDispatcher.dispatchEvent(IOErrorEvent.IO_ERROR);
 			}
 		}
 		
@@ -81,15 +87,17 @@ package control
 			var content:DisplayObjectContainer = loaderInfo.content as DisplayObjectContainer;
 			content = content.getChildAt(0) as DisplayObjectContainer;
 			
-			var length:uint = content.numChildren;
-			var rectList:Vector.<Rectangle> = new Vector.<Rectangle>;
-			for(var i:int = 0;i < length;i ++)
+			var rectMap:Object = {};
+			var i:int = content.numChildren;
+			while(i --)
 			{
 				var eachContent:DisplayObject = content.getChildAt(i);
 				var rect:Rectangle = eachContent.getBounds(eachContent);
-				rectList.push(rect);
+				rectMap[_subTextureList[i]] = rect;
 			}
-			_textureBytes = modify(_textureBytes, _skeletonXMLProxy.modifySubTextureSize(rectList));
+			_xmlDataProxy.updateDisplayPivot(rectMap);
+			_xmlDataProxy.createTextureAtlas(rectMap, _subTextureList);
+			_textureBytes = modify(_textureBytes, _xmlDataProxy.getTextureAtlasXMLWithPivot());
 			
 			MessageDispatcher.dispatchEvent(MessageDispatcher.FLA_TEXTURE_ATLAS_SWF_LOADED, _textureBytes);
 		}

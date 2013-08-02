@@ -20,14 +20,13 @@
 	{
 		public static const RELOAD_JSFL:String = "reloadJSFL";
 		
+		public static const GET_DOCUMENT_INFO:String = "getDocumentInfo";
 		public static const GET_ARMATURE_LIST:String = "getArmatureList";
 		public static const GENERATE_ARMATURE:String = "generateArmature";
 		public static const CLEAR_TEXTURE_SWFITEM:String = "clearTextureSWFItem";
 		public static const ADD_TEXTURE_TO_SWFITEM:String = "addTextureToSWFItem";
 		public static const EXPORT_SWF:String = "exportSWF";
-		public static const COPY_MOVEMENT:String = "copyArmatureFrom";
-		public static const GET_DOCUMENT_INFO:String = "getDocumentInfo";
-		
+		public static const COPY_ANIMATION:String = "copyArmatureFrom";
 		
 		private static const LOCAL_CONNECTION_NAME:String = "_DragonBonesDesignPanelLocalConnection";
 		private static const CONNECTION_METHOD_NAME:String = "connectionMethodName";
@@ -359,11 +358,12 @@
 		
 		
 		/**
-		 * Reloads JSFL (for debugging purposes)
+		 * Gets FLA document info
 		 */
 		public function getDocumentInfo():void{
 			runJSFLMethod(GET_DOCUMENT_INFO, "dragonBones.getDocumentInfo");
 		}
+		
 		
 		/**
 		 * Get armatures from current fla file's library
@@ -380,9 +380,9 @@
 		/**
 		 * Get armature data by name
 		 */
-		public function generateArmature(armatureName:String, scale:Number):void
+		public function generateArmature(armatureName:String):void
 		{
-			runJSFLMethod(GENERATE_ARMATURE, "dragonBones.generateArmature", armatureName, scale, true);
+			runJSFLMethod(GENERATE_ARMATURE, "dragonBones.generateArmature", armatureName, false, true);
 		}
 		
 		/**
@@ -410,7 +410,7 @@
 		}
 		
 		/**
-		 * Update skeleton structure data from XML to fla file
+		 * Update armature structure data from XML to fla file
 		 */
 		public function changeArmatureConnection(armatureName:String, armatureXML:XML):void
 		{
@@ -418,19 +418,19 @@
 		}
 		
 		/**
-		 * Update movement data from XML data to fla file
+		 * Update animation data from XML data to fla file
 		 */
-		public function changeMovement(armatureName:String, movementName:String, movementXML:XML):void
+		public function changeAnimation(armatureName:String, animationName:String, animationXML:XML):void
 		{
-			runJSFLMethod(null, "dragonBones.changeMovement", armatureName, movementName, movementXML);
+			runJSFLMethod(null, "dragonBones.changeAnimation", armatureName, animationName, animationXML);
 		}
 		
 		/**
-		 * Update movement data from XML data to fla file
+		 * Update animation data from XML data to fla file
 		 */
-		public function copyMovement(targetArmatureName:String, sourceArmatureName:String, sourceMovementName:String, sourceMovementXML:XML):void
+		public function copyAnimation(targetArmatureName:String, sourceArmatureName:String, sourceAnimationName:String, sourceAnimationXML:XML):void
 		{
-			runJSFLMethod(COPY_MOVEMENT, "dragonBones.copyMovement", targetArmatureName, sourceArmatureName, sourceMovementName, sourceMovementXML);
+			runJSFLMethod(COPY_ANIMATION, "dragonBones.copyAnimation", targetArmatureName, sourceArmatureName, sourceAnimationName, sourceAnimationXML);
 		}
 	}
 }

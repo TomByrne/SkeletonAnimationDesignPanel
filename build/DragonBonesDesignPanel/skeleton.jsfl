@@ -1,237 +1,250 @@
-﻿var didExist = (dragonBones!=null);
+﻿﻿var didExist = (dragonBones!=null);
 
 var dragonBones = {};
 (function(){
 
-var SKELETON = "skeleton";
+var OLD_BONE = "b";
+var OLD_ANIMATION = "mov";
+var OLD_TIMELINE = "b";
+var OLD_DURATION_TO = "to";
+var OLD_LOOP = "lp";
+var OLD_DURATION_TWEEN = "drTW";
+var OLD_TWEEN_EASING = "twE";
+var OLD_SCALE = "sc";
+var OLD_OFFSET = "dl";
 
-var ARMATURES = "armatures";
+var DRAGON_BONES = "dragonBones";
 var ARMATURE = "armature";
-var BONE = "b";
-var DISPLAY = "d";
-
-var ANIMATIONS = "animations";
+var BONE = "bone";
+var SKIN = "skin";
+var SLOT = "slot";
+var DISPLAY = "display";
 var ANIMATION = "animation";
-var MOVEMENT = "mov";
-var FRAME = "f";
+var TIMELINE = "timeline";
+var FRAME = "frame";
+var TRANSFORM = "transform";
 var COLOR_TRANSFORM = "colorTransform";
-
-var TEXTURE_ATLAS = "TextureAtlas";
-var SUB_TEXTURE = "SubTexture";
-
-var A_BACKGROUND_COLOR = "backgroundColor";
 
 var A_FRAME_RATE = "frameRate";
 var A_NAME = "name";
-var A_START = "st";
-var A_DURATION = "dr";
-var A_DURATION_TO = "to";
-var A_DURATION_TWEEN = "drTW";
-var A_LOOP = "lp";
-var A_MOVEMENT_SCALE = "sc";
-var A_MOVEMENT_DELAY = "dl";
+var A_START = "start";
+var A_DURATION = "duration";
+var A_FADE_IN_TIME = "fadeInTime";
+var A_LOOP = "loop";
+var A_SCALE = "scale";
+var A_OFFSET = "offset";
 
 var A_PARENT = "parent";
+var A_TYPE = "type";
 var A_X = "x";
 var A_Y = "y";
-var A_SCALE_X = "cX";
-var A_SCALE_Y = "cY";
-var A_SKEW_X = "kX";
-var A_SKEW_Y = "kY";
-var A_Z = "z";
-var A_DISPLAY_INDEX = "dI";
-var A_EVENT = "evt";
-var A_SOUND = "sd";
-var A_SOUND_EFFECT = "sdE";
-var A_TWEEN_EASING ="twE";
-var A_TWEEN_ROTATE_ ="twR_";
-var A_TWEEN_ROTATE ="twR";
-var A_IS_ARMATURE = "isArmature";
-var A_MOVEMENT = "mov";
-var A_VISIBLE = "visible";
-var A_MASK = "mask";
-
-var A_WIDTH = "width";
-var A_HEIGHT = "height";
+var A_SKEW_X = "skX";
+var A_SKEW_Y = "skY";
+var A_SCALE_X = "scX";
+var A_SCALE_Y = "scY";
 var A_PIVOT_X = "pX";
 var A_PIVOT_Y = "pY";
+var A_Z_ORDER = "z";
+var A_DISPLAY_INDEX = "displayIndex";
+var A_EVENT = "event";
+var A_SOUND = "sound";
+var A_TWEEN_EASING ="tweenEasing";
+var A_TWEEN_ROTATE ="tweenRotate";
+var A_ACTION = "action";
+var A_HIDE = "hide";
+var A_MASK = "mask";
 
-var A_ALPHA = "a";
-var A_RED = "r";
-var A_GREEN = "g";
-var A_BLUE = "b";
+var A_BACKGROUND_COLOR = "backgroundColor";
+var A_WIDTH = "width";
+var A_HEIGHT = "height";
 
+var A_ALPHA_OFFSET = "aO";
+var A_RED_OFFSET = "rO";
+var A_GREEN_OFFSET = "gO";
+var A_BLUE_OFFSET = "bO";
 var A_ALPHA_MULTIPLIER = "aM";
 var A_RED_MULTIPLIER = "rM";
 var A_GREEN_MULTIPLIER = "gM";
 var A_BLUE_MULTIPLIER = "bM";
 
-var V_SOUND_LEFT = "l";
-var V_SOUND_RIGHT = "r";
-var V_SOUND_LEFT_TO_RIGHT = "lr";
-var V_SOUND_RIGHT_TO_LEFT = "rl";
-var V_SOUND_FADE_IN = "in";
-var V_SOUND_FADE_OUT = "out";
+var V_IMAGE = "image";
+var V_ARMATURE = "armature";
 
 var SYMBOL = "symbol";
 var MOVIE_CLIP = "movie clip";
 var GRAPHIC = "graphic";
 var BITMAP = "bitmap";
+var MOTION = "motion";
 var STRING = "string";
 var LABEL_TYPE_NAME = "name";
 var EVENT_PREFIX = "@";
-var MOVEMENT_PREFIX = "#";
+var ACTION_PREFIX = "#";
 var NO_EASING = "^";
 var DELIM_CHAR = "|";
 var UNDERLINE_CHAR = "_";
 
-var SKELETON_PANEL = "DragonBonesDesignPanel";
+var PANEL_FOLDER = "DragonBonesDesignPanel";
 var ARMATURE_DATA = "armatureData";
 var ANIMATION_DATA = "animationData";
 
 var TEXTURE_SWF_ITEM = "textureSWFItem";
 var TEXTURE_SWF = "armatureTextureSWF.swf";
 
-var helpPoint = {x:0, y:0};
+var _helpTransform = {x:0, y:0};
 
-var currentDom;
-var currentDomName;
-var currentItemBackup;
-var currentFrameBackup;
+var _currentDom;
+var _currentDomName;
+var _currentItemBackup;
+var _currentFrameBackup;
+var _librarySelectItemsBackup;
 
-var xml;
-var armaturesXML;
-var animationsXML;
+var _xml;
+var _skinXML;
 
-var armatureXML;
-var animationXML;
-var armatureConnectionXML;
-
-function trace(){
-	var _str = "";
-	for(var _i = 0;_i < arguments.length;_i ++){
-		if(_i!=0){
-			_str += ", ";
+function trace()
+{
+	var str = "";
+	for(var i = 0;i < arguments.length;i ++)
+	{
+		if(i)
+		{
+			str += ",";
 		}
-		_str += arguments[_i];
+		str += arguments[i];
 	}
-	fl.trace(_str);
+	fl.trace(str);
 }
 
-function formatNumber(_num, _retain){
-	_retain = _retain || 100;
-	return Math.round(_num * _retain) / _retain;
+function formatNumber(num, retain)
+{
+	retain = retain || 100;
+	return Math.round(num * retain) / retain;
 }
 
-function replaceString(_strOld, _str, _rep){
-	if(_strOld){
-		return _strOld.split(_str).join(_rep);
+function replaceString(strOld, str, rep)
+{
+	if(strOld)
+	{
+		return strOld.split(str).join(rep);
 	}
 	return "";
 }
 
 //to determine whether the layer is blank layer
-function isBlankLayer(_layer){
-	for each(var _frame in filterKeyFrames(_layer.frames)){
-		if(_frame.elements.length){
-			return false;
-		}
-	}
-	return true;
-}
-
-//to determine whether the layer is a single item layer (all frames considered the same item)
-function isMultiItemLayer(_layer){
-	var symbol = null;
-	var foundSymbol = null;
-	for each(var _frame in filterKeyFrames(_layer.frames)){
-		for each(var _element in _frame.elements){
-			if(symbol = getBoneSymbol(_element)){
-				if(foundSymbol==null){
-					foundSymbol = symbol;
-				}else if(foundSymbol!=symbol){
-					return true;
-				}
-			}
+function isBoneLayer(layer)
+{
+	var frames = filterKeyFrames(layer.frames);
+	var i = frames.length;
+	while(i --)
+	{
+		if(getBoneSymbol(frames[i].elements))
+		{
+			return true;
 		}
 	}
 	return false;
 }
 
 //filter key frames from a frame array
-function filterKeyFrames(_frames){
-	var _framesCopy = [];
-	for each(var _frame in _frames){
-		if(_framesCopy.indexOf(_frame) >= 0){
+function filterKeyFrames(frames)
+{
+	var framesCopy = [];
+	var length = frames.length;
+	var frame;
+	for(var i = 0;i < length;i ++)
+	{
+		frame = frames[i];
+		if(framesCopy.indexOf(frame) >= 0)
+		{
 			continue;
 		}
-		_framesCopy.push(_frame);
+		framesCopy.push(frame);
 	}
-	return _framesCopy;
+	return framesCopy;
 }
 
-function errorDOM(){
-	if(!currentDom){
-		alert("cannot open FLA file！");
+function errorDOM()
+{
+	if(!_currentDom)
+	{
+		alert("Cannot open FLA file!");
 		return true;
 	}
 	return false;
 }
 
 //change object name if its name is invalid.
-function formatName(_obj){
-	var _name = _obj.name;
-	if(!_name){
-		_obj.name = _name = "unnamed" + Math.round(Math.random()*10000);
+function formatName(obj)
+{
+	if(!obj.name)
+	{
+		obj.name = "unnamed_" + Math.round(Math.random() * 10000);
 	}
-	return _name;
+	return obj.name;
 }
 
 //handle conflict object name
-function formatSameName(_obj, _dic){
-	var _i = 0;
-	var _name = formatName(_obj);
-	while(_dic[_name]){
-		_name = _obj.name + _i;
-		_i ++;
+function formatSameName(obj, dic)
+{
+	var name = formatName(obj);
+	var i = 0;
+	while(dic[name])
+	{
+		name = obj.name + i;
+		i ++;
 	}
-	/*if(_i > 0){
-		_obj.name = _name;
-	}*/
-	_dic[_name] = true;
-	return _name;
+	if(i > 0)
+	{
+		obj.name = name;
+	}
+	dic[name] = true;
+	return name;
 }
 
 //to determine whether the frame is not a easing frame.
-function isNoEasingFrame(_frame){
-	return _frame.labelType == LABEL_TYPE_NAME && _frame.name.indexOf(NO_EASING) == 0;
+function isNoEasingFrame(frame)
+{
+	return frame.labelType == LABEL_TYPE_NAME && frame.name.indexOf(NO_EASING) == 0;
 }
 
 //To determine whether the frame is special frame
-function isSpecialFrame(_frame, _framePrefix, _returnName){
-	var _b = _frame.labelType == LABEL_TYPE_NAME && _frame.name.indexOf(_framePrefix) >= 0 && _frame.name.length > 1;
-	if(_b && _returnName){
-		var _arr = _frame.name.split(DELIM_CHAR);
-		for each(var _str in _arr){
-			if(_str.indexOf(_framePrefix) == 0){
-				return _str.substr(1);
+function isSpecialFrame(frame, framePrefix, returnName)
+{
+	var result = 
+		frame.labelType == LABEL_TYPE_NAME && 
+		frame.name.indexOf(framePrefix) >= 0 && 
+		frame.name.length > 1;
+	
+	if(result && returnName)
+	{
+		var arr = frame.name.split(DELIM_CHAR);
+		for each(var str in arr)
+		{
+			if(str.indexOf(framePrefix) == 0)
+			{
+				return str.substr(1);
 			}
 		}
-		//_frame.name is incorrect special frame name
+		//frame.name is incorrect special frame name
 		return false;
 	}
-	return _b;
+	return result;
 }
 
 //To determine whether the frame is a main frame
-function isMainFrame(_frame){
-	if(_frame.labelType == LABEL_TYPE_NAME)
+function isMainFrame(frame)
+{
+	if(frame.labelType == LABEL_TYPE_NAME)
 	{
-		if(isSpecialFrame(_frame, EVENT_PREFIX) || isSpecialFrame(_frame, MOVEMENT_PREFIX))
+		if(
+			isSpecialFrame(frame, EVENT_PREFIX) || 
+			isSpecialFrame(frame, ACTION_PREFIX)
+		)
 		{
 			return false;
 		}
-		if(_frame.name.indexOf(NO_EASING) == 0 && _frame.name.length == 1)
+		//
+		if(frame.name.indexOf(NO_EASING) == 0 && frame.name.length == 1)
 		{
 			return false;
 		}
@@ -241,9 +254,14 @@ function isMainFrame(_frame){
 }
 
 //To determine whether the layer is main label layer
-function isMainLayer(_layer){
-	for each(var _frame in filterKeyFrames(_layer.frames)){
-		if(isMainFrame(_frame)){
+function isMainLayer(layer)
+{
+	var frames = filterKeyFrames(layer.frames);
+	var i = frames.length;
+	while(i --)
+	{
+		if(isMainFrame(frames[i]))
+		{
 			return true;
 		}
 	}
@@ -252,588 +270,743 @@ function isMainLayer(_layer){
 
 //To determine whether the item is valide armature.
 //If yes, return mainLayer and boneLayers
-function isArmatureItem(_item, _isChildArmature){
-	if(_item.itemType != MOVIE_CLIP && _item.itemType != GRAPHIC)
+function isArmatureItem(item, isChildArmature)
+{
+	if(
+		item.itemType != MOVIE_CLIP && 
+		item.itemType != GRAPHIC
+	)
 	{
 		return null;
 	}
-	var _layersFiltered = [];
-	var _mainLayer;
-	for each(var _layer in _item.timeline.layers){
-		switch(_layer.layerType){
+	var layersFiltered = [];
+	var layers = item.timeline.layers;
+	var i = layers.length;
+	var layer;
+	var mainLayer;
+	while(i --)
+	{
+		layer = layers[i];
+		switch(layer.layerType)
+		{
 			case "folder":
 			case "guide":
 			//case "mask":
 				break;
 			default:
-				if(isMainLayer(_layer)){
-					_mainLayer = _layer;
-				}else if(!isBlankLayer(_layer)){
-					//_layersFiltered.unshift(_layer);
-					_layersFiltered.push(_layer); // so masks are encountered before masked
+				if(isMainLayer(layer))
+				{
+					mainLayer = layer;
+				}
+				else if(isBoneLayer(layer))
+				{
+					layersFiltered.push(layer);
 				}
 				break;
 		}
 	}
-	if(_layersFiltered.length > 0){
-		if(_mainLayer){
-			_layersFiltered.unshift(_mainLayer);
-			return _layersFiltered;
-		}else if(_isChildArmature && _item.timeline.frameCount > 1){
-			_mainLayer = {};
-			_mainLayer.frames = [];
-			_mainLayer.frameCount = _item.timeline.frameCount;
+	
+	if(layersFiltered.length > 0)
+	{
+		if(mainLayer)
+		{
+			layersFiltered.unshift(mainLayer);
+			return layersFiltered;
+		}
+		else if(isChildArmature && item.timeline.frameCount > 1)
+		{
+			//检测未加标签的子动画时，虽然frameCount大于1，但应更深入的检查是否各个图层只有一帧
 			
-			var _frame = { };
-			_frame.labelType = LABEL_TYPE_NAME;
-			_frame.name = "unnamed";
-			_frame.startFrame = 0;
-			_frame.duration = _mainLayer.frameCount;
+			mainLayer = {};
+			mainLayer.frameCount = item.timeline.frameCount;
+			mainLayer.frames = [];
 			
-			_mainLayer.frames.push(_frame);
-			_layersFiltered.unshift(_mainLayer);
-			return _layersFiltered;
+			var frame = {};
+			frame.labelType = LABEL_TYPE_NAME;
+			frame.name = "unnamed";
+			frame.startFrame = 0;
+			frame.duration = mainLayer.frameCount;
+			
+			mainLayer.frames.push(frame);
+			layersFiltered.unshift(mainLayer);
+			return layersFiltered;
 		}
 	}
 	return null;
 }
 
-function getMainFrameList(_keyFrames){
-	var _length = _keyFrames.length;
-	var _nameDic = {};
-	
-	var _frame;
-	var _mainFrame;
-	var _isEndFrame;
-	var _mainFrameList = [];
-	
-	for(var _iF = 0;_iF < _length;_iF ++){
-		_frame = _keyFrames[_iF];
-		if(isMainFrame(_frame)){
+function getMainFrameList(frames)
+{
+	frames = filterKeyFrames(frames);
+	var nameDic = {};
+	var mainFrameList = [];
+	var length = frames.length;
+	var frame;
+	var mainFrame;
+	var isEndFrame;
+	for(var i = 0;i < length;i ++)
+	{
+		frame = frames[i];
+		if(isMainFrame(frame))
+		{
 			//new main frame
-			_mainFrame = {};
-			_mainFrame.frame = _frame;
-			_mainFrame.duration = _frame.duration;
-			_mainFrame.frames = [_frame];
-			formatSameName(_frame, _nameDic);
-		}else if(_mainFrame){
+			mainFrame = {};
+			mainFrame.frame = frame;
+			mainFrame.duration = frame.duration;
+			mainFrame.frames = [frame];
+			formatSameName(frame, nameDic);
+		}
+		else if(mainFrame)
+		{
 			//continue
-			_mainFrame.duration += _frame.duration;
-			_mainFrame.frames.push(_frame);
-		}else{
+			mainFrame.duration += frame.duration;
+			mainFrame.frames.push(frame);
+		}
+		else
+		{
 			//ignore
 			continue;
 		}
-		_isEndFrame = _iF + 1 == _length || isMainFrame(_keyFrames[_iF + 1]);
-		if(_mainFrame && _isEndFrame){
+		isEndFrame = i + 1 == length || isMainFrame(frames[i + 1]);
+		if(mainFrame && isEndFrame)
+		{
 			//end
-			_mainFrameList.push(_mainFrame);
+			mainFrameList.push(mainFrame);
 		}
 	}
-	return _mainFrameList;
+	return mainFrameList;
 }
 
 //filter bone symbol from all elements in a frame.
-function getBoneSymbol(element){
-	if(element.symbolType == MOVIE_CLIP || element.symbolType == GRAPHIC || element.instanceType == BITMAP){
-		return element;
+function getBoneSymbol(elements)
+{
+	var i = elements.length;
+	var element;
+	while(i --)
+	{
+		element = elements[i];
+		if(
+			element.symbolType == MOVIE_CLIP || 
+			element.symbolType == GRAPHIC || 
+			element.instanceType == BITMAP
+		)
+		{
+			return element;
+		}
 	}
 	return null;
 }
 
 //get bone by name from a frame 
-/*function getBoneFromLayers(layers, _boneName, _frameIndex){
-	for each(var _layer in layers){
-		if(_layer.name == _boneName){
-			return getBoneSymbol(_layer.frames[_frameIndex].elements);
+function getBoneFromLayers(layers, boneName, frameIndex)
+{
+	var i = layers.length;
+	var layer;
+	var frame;
+	while(i --)
+	{
+		layer = layers[i];
+		if(layer.name == boneName)
+		{
+			frame = layer.frames[frameIndex];
+			if(frame)
+			{
+				return getBoneSymbol(frame.elements);
+			}
+			break;
 		}
 	}
 	return null;
-}*/
-
-//write armature connection data
-function setArmatureConnection(_item, _data){
-	_item.addData(ARMATURE_DATA, STRING, _data);
-	//Jsfl api Or Flash pro bug
-	_item.symbolType = GRAPHIC;
-	_item.symbolType = MOVIE_CLIP;
 }
 
-function getMovementXML(_movementName, _duration, _item){
-	var _xml = <{MOVEMENT} {A_NAME}={_movementName}/>;
-	if(_item.hasData(ANIMATION_DATA)){
-		var _animationXML = XML(_item.getData(ANIMATION_DATA));
-		var _movementXML = _animationXML[MOVEMENT].(@name == _movementName)[0];
-	}
-	_xml.@[A_DURATION] = _duration;
-	if(_movementXML){
-		_xml.@[A_DURATION_TO] = _movementXML.@[A_DURATION_TO];
-	}else{
-		_xml.@[A_DURATION_TO] = 6;
-	}
-	if(_duration > 1){
-		if(_movementXML){
-			if(_xml.@[A_DURATION] == _movementXML.@[A_DURATION]){
-				_xml.@[A_DURATION_TWEEN] = _movementXML.@[A_DURATION_TWEEN];
-			}else{
-				_xml.@[A_DURATION_TWEEN] = _duration;
-				_movementXML.@[A_DURATION] = _duration;
-				_movementXML.@[A_DURATION_TWEEN] = _duration;
-			}
-			_xml.@[A_LOOP] = _movementXML.@[A_LOOP];
-			_xml.@[A_TWEEN_EASING] = _movementXML.@[A_TWEEN_EASING].length()?_movementXML.@[A_TWEEN_EASING]:NaN;
-		}else{
-			_xml.@[A_DURATION_TWEEN] = _duration > 2?_duration:10;
-			if(_duration == 2){
-				_xml.@[A_LOOP] = 1;
-				_xml.@[A_TWEEN_EASING] = 2;
-			}else{
-				_xml.@[A_LOOP] = 0;
-				_xml.@[A_TWEEN_EASING] = NaN;
-			}
-		}
-	}
-	return _xml;
-}
-
-function getMovementBoneXML(_movementXML, _boneName, _item){
-	var _xml = _movementXML[BONE].(@name == _boneName)[0];
-	if(!_xml){
-		_xml = <{BONE} {A_NAME}={_boneName}/>;
-		_xml.@[A_MOVEMENT_SCALE] = 1;
-		_xml.@[A_MOVEMENT_DELAY] = 0;
-		if(_item.hasData(ANIMATION_DATA)){
-			var _animationXML = XML(_item.getData(ANIMATION_DATA));
-			_movementName = _movementXML.@[A_NAME];
-			var _movementXMLBackup = _animationXML[MOVEMENT].(@name == _movementName)[0];
-			if(_movementXMLBackup){
-				var _boneXML = _movementXMLBackup[BONE].(@name == _boneName)[0];
-				if(_boneXML){
-					_xml.@[A_MOVEMENT_SCALE] = _boneXML.@[A_MOVEMENT_SCALE];
-					_xml.@[A_MOVEMENT_DELAY] = _boneXML.@[A_MOVEMENT_DELAY];
-				}
-			}
-		}
-		_movementXML.appendChild(_xml);
-	}
-	return _xml;
-}
-
-function getBoneXML(_name, _frameXML){
-	var _xml = armatureXML[BONE].(@name == _name)[0];
-	if(!_xml){
-		_xml = <{BONE} {A_NAME}={_name}/>;
-		var _connectionXML = armatureConnectionXML[BONE].(@name == _name)[0];
-		if(_connectionXML && _connectionXML.@[A_PARENT][0]){
-			_xml.@[A_PARENT] = _connectionXML.@[A_PARENT];
-		}
-		_xml.@[A_X] = _frameXML.@[A_X];
-		_xml.@[A_Y] = _frameXML.@[A_Y];
-		_xml.@[A_SKEW_X] = _frameXML.@[A_SKEW_X];
-		_xml.@[A_SKEW_Y] = _frameXML.@[A_SKEW_Y];
-		_xml.@[A_SCALE_X] = _frameXML.@[A_SCALE_X];
-		_xml.@[A_SCALE_Y] = _frameXML.@[A_SCALE_Y];
-		_xml.@[A_PIVOT_X] = _frameXML.@[A_PIVOT_X];
-		_xml.@[A_PIVOT_Y] = _frameXML.@[A_PIVOT_Y];
-		_xml.@[A_Z] = _frameXML.@[A_Z];
-		armatureXML.appendChild(_xml);
-	}
-	return _xml;
-}
-
-function getDisplayXML(_boneXML, _imageName, _isArmature){
-	var _xml = _boneXML[DISPLAY].(@name == _imageName)[0];
-	if(!_xml){
-		_xml = <{DISPLAY} {A_NAME}={_imageName}/>;
-		if(_isArmature){
-			_xml.@[A_IS_ARMATURE] = 1;
-		}
-		_boneXML.appendChild(_xml);
-	}
-	return _xml;
-}
-
-function generateMovement(_item, _mainFrame, _layers){
-	var _start = _mainFrame.frame.startFrame;
-	var _duration = _mainFrame.duration;
-	var _movementName = _mainFrame.frame.name;
-	if(isNoEasingFrame(_mainFrame.frame))
+function appendXML(parentXML, childXML)
+{
+	var xmlList = parentXML[childXML.localName()];
+	var lastXML = (xmlList && xmlList.length() > 0)?xmlList[xmlList.length() - 1]:null;
+	if(lastXML)
 	{
-		var _noAutoEasing = true;
-		_movementName = _movementName.substr(1);
+		parentXML.insertChildAfter(lastXML, childXML);
 	}
-	
-	var _movementXML = getMovementXML(_movementName, _duration, _item);
-	
-	var _boneNameDic = {};
-	var _boneZDic = {};
-	var _zList = [];
-	var _frameStart;
-	var _frameDuration;
-	var _boneList;
-	var _z;
-	var _i;
-	var _movementBoneXML;
-	var _frameXML;
-	var _symbol;
-	var _boneName;
-	var _maskedFrames;
-	
-	for(var j=_layers.length-1; j>=0; --j){
-		var _layer = _layers[j];
-		_boneName = null;
-		_multiItemLayer = isMultiItemLayer(_layer);
-		if(!_multiItemLayer){
-			_boneName = formatName(_layer, _multiItemLayer);
-			_boneZDic[_boneName] = _boneZDic[_boneName] || [];
-			_movementBoneXML = null;
-		}else{
-			var _movementBoneXMLLookup = {}; 
-		}
-		for each(var _frame in filterKeyFrames(_layer.frames.slice(_start, _start + _duration))){
-			if(_frame.startFrame < _start){
-				_frameStart = 0;
-				_frameDuration = _frame.duration - _start + _frame.startFrame;
-			}else if(_frame.startFrame + _frame.duration > _start + _duration){
-				_frameStart = _frame.startFrame - _start;
-				_frameDuration = _duration - _frame.startFrame + _start;
-			}else{
-				_frameStart = _frame.startFrame - _start;
-				_frameDuration= _frame.duration;
-			}
-			for(var i=0; i<_frame.elements.length; ++i){
-				var _element = _frame.elements[i];
-				_symbol = getBoneSymbol(_element);
-				if(!_symbol){
-					continue;
-				}
-				if(_multiItemLayer){
-					_boneName = (_element.name || _layer.name+"-"+i);
-					_boneZDic[_boneName] = _boneZDic[_boneName] || [];
-					_movementBoneXML = _movementBoneXMLLookup[_boneName];
-				}
-				if(!_movementBoneXML){
-					_movementBoneXML = getMovementBoneXML(_movementXML, _boneName, _item);
-					if(_multiItemLayer)_movementBoneXMLLookup[_boneName] = _movementBoneXML;
-				}
-				for(_i = _frameStart ;_i < _frameStart + _frameDuration;_i ++){
-					_z = _zList[_i];
-					if(isNaN(_z)){
-						_zList[_i] = _z = _layer.length-1;
-					}else{
-						_zList[_i] = --_z;
-					}
-				}
-				_z = _zList[_frameStart];
-				_boneList = _boneZDic[_boneName];
-				for(_i = _frameStart;_i < _frameStart + _frameDuration;_i ++){
-					if(!isNaN(_boneList[_i])){
-						_boneNameDic[_boneName] = true;
-						_boneName = formatSameName(_layer, _boneNameDic);
-						_boneList = _boneZDic[_boneName] = [];
-						_movementBoneXML = getMovementBoneXML(_movementXML, _boneName, _item);
-					}
-					_boneList[_i] = _z;
-				}
-				
-				if(_frame.tweenType == "motion object"){
-					//
-					break;
-				}
-				_frameXML = generateFrame(_frame, _boneName, _symbol, _z, _noAutoEasing);
-				if(_layer.layerType=="masked"){
-					if(!_maskedFrames)_maskedFrames = [];
-					_maskedFrames.push(getBoneXML(_boneName, _frameXML));
-				}
-				addFrameToMovementBone(_frameXML, _frameStart, _frameDuration, _movementBoneXML);
-			}
-		}
-		if(_layer.layerType=="mask" && _maskedFrames){
-			for each(var maskedXML in _maskedFrames){
-				maskedXML.@[A_MASK] = _boneName;
-			}
-			_maskedFrames = null;
-		}else if(_layer.layerType!="masked"){
-			_maskedFrames = null;
-		}
+	else
+	{
+		parentXML.appendChild(childXML);
 	}
-	
-	var _prevStart;
-	var _prevDuration;
-	var _frameIndex;
-	
-	for each(var _movementBoneXML in _movementXML[BONE]){
-		_boneName = _movementBoneXML.@[A_NAME];
-		var _prevFrameXML = null;
-		for each(_frameXML in _movementBoneXML[FRAME]){
-			_frameStart = Number(_frameXML.@[A_START]);
-			if(_frameXML.childIndex() == 0){
-				if(_frameStart > 0){
-					_movementBoneXML.prependChild(<{FRAME} {A_DURATION}={_frameStart} {A_DISPLAY_INDEX}="-1"/>);
+}
+
+function getAnimationXML(armatureXML, name, item, duration)
+{
+	var xml = armatureXML[ANIMATION].(@name == name)[0];
+	if(!xml)
+	{
+		var fadeInTime = 0.3;
+		var loop = 1;
+		var scale = 1;
+		var tweenEasing = NaN;
+		
+		if(item.hasData(ANIMATION_DATA))
+		{
+			var animationsXML = XML(item.getData(ANIMATION_DATA));
+			var animationXMLInItem;
+			if(animationsXML[ANIMATION].length() > 0)
+			{
+				animationXMLInItem = animationsXML[ANIMATION].(@name == name)[0];
+				if(animationXMLInItem)
+				{
+					fadeInTime = Number(animationXMLInItem.@[A_FADE_IN_TIME]);
+					loop = Number(animationXMLInItem.@[A_LOOP]);
+					scale = Number(animationXMLInItem.@[A_SCALE]);
+					tweenEasing = Number(animationXMLInItem.@[A_TWEEN_EASING]);
 				}
-			}else {
-				_prevStart = Number(_prevFrameXML.@[A_START]);
-				_prevDuration = Number(_prevFrameXML.@[A_DURATION]);
-				if(_frameStart > _prevStart + _prevDuration){
-					_movementBoneXML.insertChildBefore(_frameXML, <{FRAME} {A_DURATION}={_frameStart - _prevStart - _prevDuration} {A_DISPLAY_INDEX}="-1"/>);
-				}
-			}
-			if(_frameXML.childIndex() == _movementBoneXML[FRAME].length() - 1){
-				_frameStart = Number(_frameXML.@[A_START]);
-				_prevDuration = Number(_frameXML.@[A_DURATION]);
-				if(_frameStart + _prevDuration < _duration){
-					_movementBoneXML.appendChild(<{FRAME} {A_DURATION}={_duration - _frameStart - _prevDuration} {A_DISPLAY_INDEX}="-1"/>);
-				}
-			}
-			//tweenRotate property is for the end point of tween instead of start point
-			//sometimes, x0 need to be ingored
-			if(_prevFrameXML && _prevFrameXML.@[A_TWEEN_ROTATE_][0]){
-				var _dSkY = Number(_frameXML.@[A_SKEW_Y]) - Number(_prevFrameXML.@[A_SKEW_Y]);
-				if(_dSkY < -180){
-					_dSkY += 360;
-				}
-				if(_dSkY > 180){
-					_dSkY -= 360;
-				}
-				_tweenRotate = Number(_prevFrameXML.@[A_TWEEN_ROTATE_]);
-				if(_dSkY !=0){
-					if(_dSkY < 0){
-						if(_tweenRotate >= 0){
-							_tweenRotate ++;
-						}
-					}else{
-						if(_tweenRotate < 0){
-							_tweenRotate --;
-						}
-					}
-				}
-				_frameXML.@[A_TWEEN_ROTATE] = _tweenRotate;
-				delete _prevFrameXML.@[A_TWEEN_ROTATE_];
 			}
 			
-			_prevFrameXML = _frameXML;
+			if(!animationXMLInItem && animationsXML[OLD_ANIMATION].length() > 0)
+			{
+				animationXMLInItem = animationsXML[OLD_ANIMATION].(@name == name)[0];
+				if(animationXMLInItem)
+				{
+					fadeInTime = Number(animationXMLInItem.@[OLD_DURATION_TO]) / _currentDom.frameRate;
+					loop = Number(animationXMLInItem.@[OLD_LOOP]);
+					if(loop == 1)
+					{
+						loop = 0;
+					}
+					else
+					{
+						loop = 1;
+					}
+					scale = Number(animationXMLInItem.@[OLD_DURATION_TWEEN]) / duration;
+					tweenEasing = Number(animationXMLInItem.@[OLD_TWEEN_EASING][0]);
+				}
+				//delete old data
+			}
 		}
+		else if(duration == 2)
+		{
+			scale = 5;
+			loop = 0;
+			tweenEasing = 2;
+		}
+		
+		xml = 
+			<{ANIMATION} 
+				{A_NAME}={name}
+				{A_FADE_IN_TIME}={formatNumber(fadeInTime, 1000)}
+				{A_DURATION}={duration}
+				{A_SCALE}={formatNumber(scale)}
+				{A_LOOP}={loop}
+				{A_TWEEN_EASING}={formatNumber(tweenEasing)}
+			/>;
+		armatureXML.appendChild(xml);
 	}
-	delete _movementXML[BONE][FRAME].@[A_START];
 	
-	generateMovementEventFrames(_movementXML, _mainFrame);
-	
-	animationXML.appendChild(_movementXML);
+	return xml;
 }
 
-function generateFrame(_frame, _boneName, _symbol, _z, _noAutoEasing){
-	var _frameXML = <{FRAME}/>;
-	_frameXML.@[A_X] = formatNumber(_symbol.transformX);
-	_frameXML.@[A_Y] = formatNumber(_symbol.transformY);
-	_frameXML.@[A_SKEW_X] = formatNumber(_symbol.skewX);
-	_frameXML.@[A_SKEW_Y] = formatNumber(_symbol.skewY);
-	_frameXML.@[A_SCALE_X] = formatNumber(_symbol.scaleX);
-	_frameXML.@[A_SCALE_Y] = formatNumber(_symbol.scaleY);
-	helpPoint = _symbol.getTransformationPoint();
-	
-	if(_symbol.instanceType == BITMAP)
+function getTimelineXML(animationXML, name, item)
+{
+	var xml = animationXML[TIMELINE].(@name == name)[0];
+	if(!xml)
 	{
-		if(helpPoint.x == 0 && helpPoint.y == 0)
+		var scale = 1;
+		var offset = 0;
+		if(item.hasData(ANIMATION_DATA))
 		{
-			helpPoint.x = _symbol.hPixels * 0.5;
-			helpPoint.y = _symbol.vPixels * 0.5;
+			var animationName = animationXML.@[A_NAME];
+			
+			var animationsXML = XML(item.getData(ANIMATION_DATA));
+			var animationXMLInItem;
+			if(animationsXML[ANIMATION].length() > 0)
+			{
+				animationXMLInItem = animationsXML[ANIMATION].(@name == animationName)[0];
+				if(animationXMLInItem)
+				{
+					var timelineXML = animationXMLInItem[TIMELINE].(@name == name)[0];
+					if(timelineXML)
+					{
+						scale = Number(timelineXML.@[A_SCALE]);
+						offset = Number(timelineXML.@[A_OFFSET]);
+					}
+				}
+			}
+			
+			if(!animationXMLInItem && animationsXML[OLD_ANIMATION].length() > 0)
+			{
+				animationXMLInItem = animationsXML[OLD_ANIMATION].(@name == animationName)[0];
+				if(animationXMLInItem)
+				{
+					var timelineXML = animationXMLInItem[OLD_TIMELINE].(@name == name)[0];
+					if(timelineXML)
+					{
+						scale = Number(timelineXML.@[OLD_SCALE]);
+						offset = 1 - Number(timelineXML.@[OLD_OFFSET]);
+						offset %= 1;
+					}
+				}
+			}
+		}
+		
+		xml = 
+			<{TIMELINE}
+				{A_NAME}={name}
+				{A_SCALE}={formatNumber(scale)}
+				{A_OFFSET}={formatNumber(offset)}
+			/>;
+		
+		animationXML.appendChild(xml);
+	}
+	return xml;
+}
+
+function getBoneXML(armatureXML, name, item, frameXML)
+{
+	var xml = armatureXML[BONE].(@name == name)[0];
+	if(!xml)
+	{
+		var transformXML = frameXML[TRANSFORM][0];
+		xml = 
+			<{BONE}
+				{A_NAME}={name}
+			>
+				<{TRANSFORM}
+					{A_X}={transformXML.@[A_X]}
+					{A_Y}={transformXML.@[A_Y]}
+					{A_SKEW_X}={transformXML.@[A_SKEW_X]}
+					{A_SKEW_Y}={transformXML.@[A_SKEW_Y]}
+					{A_SCALE_X}={transformXML.@[A_SCALE_X]}
+					{A_SCALE_Y}={transformXML.@[A_SCALE_Y]}
+				/>
+			</{BONE}>;
+		
+		if(item.hasData(ARMATURE_DATA))
+		{
+			var armatureXMLInItem = XML(item.getData(ARMATURE_DATA));
+			var connectionXML;
+			if(armatureXMLInItem[BONE].length() > 0)
+			{
+				connectionXML = armatureXMLInItem[BONE].(@name == name)[0];
+			}
+			else if(armatureXMLInItem[OLD_BONE].length() > 0)
+			{
+				connectionXML = armatureXMLInItem[OLD_BONE].(@name == name)[0];
+			}
+			
+			if(connectionXML && connectionXML.@[A_PARENT][0])
+			{
+				xml.@[A_PARENT] = connectionXML.@[A_PARENT];
+			}
+		}
+		armatureXML.prependChild(xml);
+	}
+	return xml;
+}
+
+function getSlotXML(armatureXML, name, item, frameXML)
+{
+	var skinXML = armatureXML[SKIN][0];
+	var xml = skinXML[SLOT].(@name == name)[0];
+	if(!xml)
+	{
+		xml = 
+			<{SLOT}
+				{A_NAME}={name}
+				{A_PARENT}={name}
+				{A_Z_ORDER}={frameXML.@[A_Z_ORDER]}
+			/>;
+			
+		appendXML(skinXML, xml);
+	}
+	return xml;
+}
+
+function getDisplayXML(slotXML, name, item, frameXML, isArmature)
+{
+	var xml = slotXML[DISPLAY].(@name == name)[0];
+	if(!xml)
+	{
+		var transformXML = frameXML[TRANSFORM][0];
+		xml = 
+			<{DISPLAY} 
+				{A_NAME}={name}
+				{A_TYPE}={isArmature?V_ARMATURE:V_IMAGE}
+			>
+				<{TRANSFORM}
+					{A_X}={Number(transformXML.@[A_PIVOT_X])}
+					{A_Y}={Number(transformXML.@[A_PIVOT_Y])}
+					{A_SKEW_X}={0}
+					{A_SKEW_Y}={0}
+					{A_SCALE_X}={1}
+					{A_SCALE_Y}={1}
+				/>
+			</{DISPLAY}>;
+			
+		appendXML(slotXML, xml);
+	}
+	return xml;
+}
+
+function generateAnimation(item, mainFrame, layers, armatureXML)
+{
+	var start = mainFrame.frame.startFrame;
+	var duration = mainFrame.duration;
+	var animationName = mainFrame.frame.name;
+	var noAutoEasing = false;
+	if(isNoEasingFrame(mainFrame.frame))
+	{
+		noAutoEasing = true;
+		animationName = animationName.substr(1);
+	}
+	
+	var animationXML = getAnimationXML(armatureXML, animationName, item, duration);
+
+	var boneNameDic = {};
+	var boneZDic = {};
+	var zList = [];
+	
+	var layersLength = layers.length;
+	var layer;
+	var boneName;
+	var timelineXML;
+	var frames;
+	var framesLength;
+	var frameStart
+	var frameDuration;
+	var symbol;
+	var boneList;
+	var zOrder;
+	var maskedFrames;
+	for(var i = 0;i < layersLength;i ++)
+	{
+		layer = layers[i];
+		boneName = formatName(layer);
+		boneZDic[boneName] = boneZDic[boneName] || [];
+		timelineXML = null;
+		frames = filterKeyFrames(layer.frames.slice(start, start + duration));
+		framesLength = frames.length;
+		for(var j = 0;j < framesLength;j ++)
+		{
+			frame = frames[j];
+			if(frame.startFrame < start)
+			{
+				frameStart = 0;
+				frameDuration = frame.duration - start + frame.startFrame;
+			}
+			else if(frame.startFrame + frame.duration > start + duration)
+			{
+				frameStart = frame.startFrame - start;
+				frameDuration = duration - frame.startFrame + start;
+			}
+			else
+			{
+				frameStart = frame.startFrame - start;
+				frameDuration= frame.duration;
+			}
+			symbol = getBoneSymbol(frame.elements);
+			if(!symbol)
+			{
+				continue;
+			}
+			if(!timelineXML)
+			{
+				timelineXML = getTimelineXML(animationXML, boneName, item);
+			}
+			for(var k = frameStart ;k < frameStart + frameDuration;k ++)
+			{
+				var zOrder = zList[k];
+				if(isNaN(zOrder))
+				{
+					zList[k] = zOrder = 0;
+				}
+				else
+				{
+					zList[k] = ++ zOrder;
+				}
+			}
+			zOrder = zList[frameStart];
+			boneList = boneZDic[boneName];
+			for(k = frameStart;k < frameStart + frameDuration;k ++)
+			{
+				if(!isNaN(boneList[k]))
+				{
+					boneNameDic[boneName] = true;
+					boneName = formatSameName(layer, boneNameDic);
+					boneList = boneZDic[boneName] = [];
+					timelineXML = getTimelineXML(animationXML, boneName, item);
+				}
+				boneList[k] = zOrder;
+			}
+			
+			if(frame.tweenType == "motion object")
+			{
+				break;
+			}
+			//zOrder
+			addFrameToTimeline(
+				generateFrame(item, frame, boneName, symbol, i, noAutoEasing, armatureXML),
+				frameStart,
+				frameDuration, 
+				timelineXML
+			);
+			if(layer.layerType=="masked"){
+				if(!maskedFrames)maskedFrames = [];
+				//maskedFrames.push(armatureXML[BONE].(@name == boneName)[0]);
+				maskedFrames.push(armatureXML[SKIN][0][SLOT].(@name == boneName)[0]);
+			}
+		}
+		if(layer.layerType=="mask" && maskedFrames){
+			for each(var maskedXML in maskedFrames){
+				maskedXML.@[A_MASK] = boneName;
+			}
+			maskedFrames = null;
+		}else if(layer.layerType!="masked"){
+			maskedFrames = null;
 		}
 	}
-	else
+	
+	var timelineXMLList = animationXML[TIMELINE];
+	var prevFrameXML;
+	var frameXMLList;
+	var frameXML;
+	var prevStart;
+	var prevDuration;
+	var frameDutation;
+	for each(timelineXML in timelineXMLList)
 	{
-		var _a = _symbol.colorAlphaAmount;
-		var _r = _symbol.colorRedAmount;
-		var _g = _symbol.colorGreenAmount;
-		var _b = _symbol.colorBlueAmount;
-		var _aM = _symbol.colorAlphaPercent;
-		var _rM = _symbol.colorRedPercent;
-		var _gM = _symbol.colorGreenPercent;
-		var _bM = _symbol.colorBluePercent;
+		//boneName = timelineXML.@[A_NAME];
+		prevFrameXML = null;
+		frameXMLList = timelineXML[FRAME];
+		for each(frameXML in frameXMLList)
+		{
+			frameStart = Number(frameXML.@[A_START]);
+			if(frameXML.childIndex() == 0)
+			{
+				if(frameStart > 0)
+				{
+					timelineXML.prependChild(<{FRAME} {A_DURATION}={frameStart} {A_DISPLAY_INDEX}="-1"/>);
+				}
+			}
+			else 
+			{
+				prevStart = Number(prevFrameXML.@[A_START]);
+				prevDuration = Number(prevFrameXML.@[A_DURATION]);
+				if(frameStart > prevStart + prevDuration)
+				{
+					frameDutation = frameStart - prevStart - prevDuration;
+					timelineXML.insertChildBefore(frameXML, <{FRAME} {A_DURATION}={frameDutation} {A_DISPLAY_INDEX}="-1"/>);
+				}
+			}
+			if(frameXML.childIndex() == timelineXML[FRAME].length() - 1)
+			{
+				frameStart = Number(frameXML.@[A_START]);
+				prevDuration = Number(frameXML.@[A_DURATION]);
+				if(frameStart + prevDuration < duration)
+				{
+					frameDutation = duration - frameStart - prevDuration;
+					timelineXML.appendChild(<{FRAME} {A_DURATION}={frameDutation} {A_DISPLAY_INDEX}="-1"/>);
+				}
+			}
+			
+			prevFrameXML = frameXML;
+		}
+	}
+	delete animationXML[TIMELINE][FRAME].@[A_START];
+	
+	generateAnimationEventFrames(animationXML, mainFrame);
+}
+
+function generateFrame(item, frame, boneName, symbol, zOrder, noAutoEasing, armatureXML)
+{
+	_helpTransform = symbol.getTransformationPoint();
+	
+	if(
+		symbol.instanceType == BITMAP && 
+		_helpTransform.x == 0 && 
+		_helpTransform.y == 0
+	)
+	{
+		_helpTransform.x = symbol.hPixels * 0.5;
+		_helpTransform.y = symbol.vPixels * 0.5;
+	}
+
+	var frameXML = 
+		<{FRAME}
+			{A_Z_ORDER}={zOrder}
+		>
+			<{TRANSFORM}
+				{A_X}={formatNumber(symbol.transformX)}
+				{A_Y}={formatNumber(symbol.transformY)}
+				{A_SKEW_X}={formatNumber(symbol.skewX)}
+				{A_SKEW_Y}={formatNumber(symbol.skewY)}
+				{A_SCALE_X}={formatNumber(symbol.scaleX)}
+				{A_SCALE_Y}={formatNumber(symbol.scaleY)}
+				{A_PIVOT_X}={- _helpTransform.x}
+				{A_PIVOT_Y}={- _helpTransform.y}
+			/>
+		</{FRAME}>;
+	
+	if(symbol.instanceType != BITMAP)
+	{
+		var aO = symbol.colorAlphaAmount;
+		var rO = symbol.colorRedAmount;
+		var gO = symbol.colorGreenAmount;
+		var bO = symbol.colorBlueAmount;
+		var aM = symbol.colorAlphaPercent;
+		var rM = symbol.colorRedPercent;
+		var gM = symbol.colorGreenPercent;
+		var bM = symbol.colorBluePercent;
 		if(
-			_a != 0 ||
-			_r != 0 || 
-			_g != 0 || 
-			_b != 0 || 
-			_aM != 100 || 
-			_rM != 100 || 
-			_gM != 100 || 
-			_bM != 100
+			aO != 0 ||
+			rO != 0 || 
+			gO != 0 || 
+			bO != 0 || 
+			aM != 100 || 
+			rM != 100 || 
+			gM != 100 || 
+			bM != 100
 		)
 		{
-			var _colorTransformXML = <{COLOR_TRANSFORM}/>;
-			_colorTransformXML.@[A_ALPHA] = _a;
-			_colorTransformXML.@[A_RED] = _r;
-			_colorTransformXML.@[A_GREEN] = _g;
-			_colorTransformXML.@[A_BLUE] = _b;
-			_colorTransformXML.@[A_ALPHA_MULTIPLIER] = _aM;
-			_colorTransformXML.@[A_RED_MULTIPLIER] = _rM;
-			_colorTransformXML.@[A_GREEN_MULTIPLIER] = _gM;
-			_colorTransformXML.@[A_BLUE_MULTIPLIER] = _bM;
-			_frameXML.appendChild(_colorTransformXML);
+			var colorTransformXML = 
+				<{COLOR_TRANSFORM}
+					{A_ALPHA_OFFSET}={aO}
+					{A_RED_OFFSET}={rO}
+					{A_GREEN_OFFSET}={gO}
+					{A_BLUE_OFFSET}={bO}
+					{A_ALPHA_MULTIPLIER}={aM}
+					{A_RED_MULTIPLIER}={rM}
+					{A_GREEN_MULTIPLIER}={gM}
+					{A_BLUE_MULTIPLIER}={bM}
+				/>;
+			frameXML.appendChild(colorTransformXML);
 		}
 	}
 	
-	_frameXML.@[A_PIVOT_X] = formatNumber(helpPoint.x);
-	_frameXML.@[A_PIVOT_Y] = formatNumber(helpPoint.y);
-	_frameXML.@[A_Z] = _z;
+	var boneXML = getBoneXML(armatureXML, boneName, item, frameXML);
+	var slotXML = getSlotXML(armatureXML, boneName, item, frameXML);
 	
-	var _boneXML = getBoneXML(_boneName, _frameXML);
+	var imageItem = symbol.libraryItem;
+	var imageName = formatName(imageItem);
+	var isChildArmature = symbol.symbolType == MOVIE_CLIP;
+	var isArmature = isArmatureItem(imageItem, isChildArmature);
 	
-	var _imageItem = _symbol.libraryItem;
-	var _imageName = formatName(_imageItem);
-	var _isChildArmature = _symbol.symbolType == MOVIE_CLIP;
-	var _isArmature = isArmatureItem(_imageItem, _isChildArmature);
+	var displayXML = getDisplayXML(slotXML, imageName, item, frameXML, isArmature);
 	
-	var _displayXML = getDisplayXML(_boneXML, _imageName, _isArmature);
+	var transformXML = frameXML[TRANSFORM][0];
+	transformXML.@[A_PIVOT_X] = formatNumber(Number(transformXML.@[A_PIVOT_X]) - Number(displayXML[TRANSFORM][0].@[A_X]));
+	transformXML.@[A_PIVOT_Y] = formatNumber(Number(transformXML.@[A_PIVOT_Y]) - Number(displayXML[TRANSFORM][0].@[A_Y]));
 	
-	if(_symbol.visible === false)
+	if(symbol.visible === false)
 	{
-		_frameXML.@[A_VISIBLE] = 0;
+		frameXML.@[A_HIDE] = 1;
+	}
+	var displayIndex = displayXML.childIndex();
+	if(displayIndex != 0)
+	{
+		frameXML.@[A_DISPLAY_INDEX] = displayIndex;
 	}
 	
-	_frameXML.@[A_DISPLAY_INDEX] = _displayXML.childIndex();
-	
-	if(_isArmature){
-		var _backupArmatureXML = armatureXML;
-		var _backupAnimationXML = animationXML;
-		var _backupArmatureConnectionXML = armatureConnectionXML;
-		
-		dragonBones.generateArmature(_imageName,1, false, _isChildArmature);
-		
-		armatureXML = _backupArmatureXML;
-		animationXML = _backupAnimationXML;
-		armatureConnectionXML = _backupArmatureConnectionXML;
+	if(isArmature)
+	{
+		dragonBones.generateArmature(imageName, isChildArmature);
 	}
 	
-	var _str = isSpecialFrame(_frame, MOVEMENT_PREFIX, true);
-	if(_str){
-		_frameXML.@[A_MOVEMENT] = _str;
+	var str = isSpecialFrame(frame, ACTION_PREFIX, true);
+	if(str)
+	{
+		frameXML.@[A_ACTION] = str;
 	}
-	
 	
 	//ease
-	if(_noAutoEasing)
+	if(noAutoEasing?frame.tweenType != MOTION:isNoEasingFrame(frame))
 	{
-		if(_frame.tweenType != "motion")
+		frameXML.@[A_TWEEN_EASING] = NaN;
+	}
+	else if(frame.tweenType == MOTION)
+	{
+		frameXML.@[A_TWEEN_EASING] = formatNumber(frame.tweenEasing * 0.01);
+		var tweenRotate = 0;
+		switch(frame.motionTweenRotate)
 		{
-			_frameXML.@[A_TWEEN_EASING] = NaN;
+			case "clockwise":
+				tweenRotate = frame.motionTweenRotateTimes + 1;
+				break;
+			case "counter-clockwise":
+				tweenRotate = - frame.motionTweenRotateTimes - 1;
+				break;
 		}
-		else
+		if(tweenRotate)
 		{
-			_frameXML.@[A_TWEEN_EASING] = formatNumber(_frame.tweenEasing * 0.01);
-			var _tweenRotate = NaN;
-			switch(_frame.motionTweenRotate){
-				case "clockwise":
-					_tweenRotate = _frame.motionTweenRotateTimes;
-					break;
-				case "counter-clockwise":
-					_tweenRotate = - _frame.motionTweenRotateTimes;
-					break;
-			}
-			if(!isNaN(_tweenRotate)){
-				_frameXML.@[A_TWEEN_ROTATE_] = _tweenRotate;
-			}
+			frameXML.@[A_TWEEN_ROTATE] = tweenRotate;
 		}
 	}
-	else
-	{
-		if(isNoEasingFrame(_frame))
-		{
-			_frameXML.@[A_TWEEN_EASING] = NaN;
-		}
-		else if(_frame.tweenType == "motion")
-		{
-			_frameXML.@[A_TWEEN_EASING] = formatNumber(_frame.tweenEasing * 0.01);
-			var _tweenRotate = NaN;
-			switch(_frame.motionTweenRotate){
-				case "clockwise":
-					_tweenRotate = _frame.motionTweenRotateTimes;
-					break;
-				case "counter-clockwise":
-					_tweenRotate = - _frame.motionTweenRotateTimes;
-					break;
-			}
-			if(!isNaN(_tweenRotate)){
-				_frameXML.@[A_TWEEN_ROTATE_] = _tweenRotate;
-			}
-		}
-	}
-	
-	
 	
 	//event
-	_str = isSpecialFrame(_frame, EVENT_PREFIX, true);
-	if(_str){
-		_frameXML.@[A_EVENT] = _str;
+	str = isSpecialFrame(frame, EVENT_PREFIX, true);
+	if(str)
+	{
+		frameXML.@[A_EVENT] = str;
 	}
 
 	//sound
-	if(_frame.soundName){
-		_frameXML.@[A_SOUND] = _frame.soundLibraryItem.linkageClassName || _frame.soundName;
-		var _soundEffect;
-		switch(_frame.soundEffect){
-			case "left channel":
-				_soundEffect = V_SOUND_LEFT;
-				break;
-			case "right channel":
-				_soundEffect = V_SOUND_RIGHT;
-				break;
-			case "fade left to right":
-				_soundEffect = V_SOUND_LEFT_TO_RIGHT;
-				break;
-			case "fade right to left":
-				_soundEffect = V_SOUND_RIGHT_TO_LEFT;
-				break;
-			case "fade in":
-				_soundEffect = V_SOUND_FADE_IN;
-				break;
-			case "fade out":
-				_soundEffect = V_SOUND_FADE_OUT;
-				break;
-		}
-		if(_soundEffect){
-			_frameXML.@[A_SOUND_EFFECT] = _soundEffect;
-		}
+	if(frame.soundName)
+	{
+		frameXML.@[A_SOUND] = frame.soundLibraryItem.linkageClassName || frame.soundName;
 	}
 	
-	return _frameXML;
+	return frameXML;
 }
 
-function generateMovementEventFrames(_movementXML, _mainFrame){
-	if(_mainFrame.frames.length > 1){
-		var _start = _mainFrame.frame.startFrame;
-		for each(var _frame in _mainFrame.frames){
-			var _eventXML = <{FRAME} {A_START}={_frame.startFrame - _start} {A_DURATION}={_frame.duration}/>;
-			var _event = isSpecialFrame(_frame, EVENT_PREFIX, true);
-			var _movement = isSpecialFrame(_frame, MOVEMENT_PREFIX, true);
-			var _sound = _frame.soundName && (_frame.soundLibraryItem.linkageClassName || _frame.soundName);
-			if(_event){
-				_eventXML.@[A_EVENT] = _event;
-			}
-			if(_movement){
-				_eventXML.@[A_MOVEMENT] = _movement;
-			}
-			if(_sound){
-				_frameXML.@[A_SOUND] = _sound;
-			}
-			_movementXML.appendChild(_eventXML);
+function generateAnimationEventFrames(animationXML, mainFrame)
+{
+	//
+	if(mainFrame.frames.length == 1)
+	{
+		return;
+	}
+	var start = mainFrame.frame.startFrame;
+	var length = mainFrame.frames.length;
+	for(var i = 0;i < length;i ++)
+	{
+		var frame = mainFrame.frames[i];
+		var eventXML = <{FRAME} {A_DURATION}={frame.duration}/>;
+		var event = isSpecialFrame(frame, EVENT_PREFIX, true);
+		var action = isSpecialFrame(frame, ACTION_PREFIX, true);
+		var sound = frame.soundName && (frame.soundLibraryItem.linkageClassName || frame.soundName);
+		if(event)
+		{
+			eventXML.@[A_EVENT] = event;
 		}
+		if(action)
+		{
+			eventXML.@[A_ACTION] = action;
+		}
+		if(sound)
+		{
+			frameXML.@[A_SOUND] = sound;
+		}
+		animationXML.appendChild(eventXML);
 	}
 }
 
-function addFrameToMovementBone(_frameXML, _start, _duration, _movementBoneXML){
-	_frameXML.@[A_START] = _start;
-	_frameXML.@[A_DURATION] = _duration;
-	for each(var _eachFrameXML in _movementBoneXML[FRAME]){
-		if(Number(_eachFrameXML.@[A_START]) > _start){
-			_movementBoneXML.insertChildBefore(_eachFrameXML, _frameXML);
+function addFrameToTimeline(frameXML, start, duration, timelineXML)
+{
+	frameXML.@[A_START] = start;
+	frameXML.@[A_DURATION] = duration;
+	var frameXMLList = timelineXML[FRAME];
+	for each(var eachFrameXML in frameXMLList)
+	{
+		if(Number(eachFrameXML.@[A_START]) > start)
+		{
+			timelineXML.insertChildBefore(eachFrameXML, frameXML);
 			return;
 		}
 	}
-	_movementBoneXML.appendChild(_frameXML);
+	timelineXML.appendChild(frameXML);
 }
+
 dragonBones.getDocumentInfo = function(){
-	if(!currentDom)return "false";
+	currentDom = fl.getDocumentDOM();
+	if(!currentDom){
+		return false;
+	}
 
 	var ret = <document/>;
 	ret.@[A_WIDTH] = currentDom.width;
@@ -841,255 +1014,301 @@ dragonBones.getDocumentInfo = function(){
 	ret.@[A_BACKGROUND_COLOR] = currentDom.backgroundColor;
 	return ret.toXMLString();
 }
-
-dragonBones.getArmatureList = function(_isSelected, armatureNames){
+dragonBones.getArmatureList = function(isSelected, armatureNames)
+{
 	fl.outputPanel.clear();
-	currentDom = fl.getDocumentDOM();
-	if(errorDOM()){
+	
+	//if frame count > 1, the skeleton have animation.
+	/*if(mainLayer.frameCount > 1)
+	{
+		
+	}*/
+	_currentDom = fl.getDocumentDOM();
+	if(errorDOM())
+	{
 		return false;
 	}
-	var _timeline = currentDom.getTimeline();
+	_currentDomName = _currentDom.name.split(".")[0];
 	
-	currentItemBackup = _timeline.libraryItem;
-	if(currentItemBackup){
-		currentFrameBackup = _timeline.currentFrame;
+	var timeline = _currentDom.getTimeline();
+	_currentItemBackup = timeline.libraryItem;
+	if(_currentItemBackup)
+	{
+		_currentFrameBackup = timeline.currentFrame;
 	}
-	currentDom.exitEditMode();
-	
-	currentDomName = currentDom.name.split(".")[0];
+	_librarySelectItemsBackup = _currentDom.library.getSelectedItems().concat();
+	_currentDom.exitEditMode();
 	
 	if(armatureNames)
 	{
 		armatureNames = armatureNames.split(",");
-		var armatureLength = armatureNames.length;
 	}
 	
-	if(armatureLength > 0)
+	var items;
+	var item;
+	if(armatureNames.length > 0)
 	{
-		var _items = [];
+		items = [];
 		for each(var armatureName in armatureNames)
 		{
-			var _item = currentDom.library.items[currentDom.library.findItemIndex(armatureName)];
-			if(_item)
+			item = _currentDom.library.items[_currentDom.library.findItemIndex(armatureName)];
+			if(item)
 			{
-				_items.push(_item);
+				items.push(item);
 			}
 		}
 	}
 	else
 	{
-		var _items = _isSelected?currentDom.library.getSelectedItems():currentDom.library.items;
+		items = isSelected?_librarySelectItemsBackup:_currentDom.library.items;
 	}
 	
-	var _xml = <{ARMATURES} {A_NAME}={currentDomName}/>;
-	for(var i=0; i<_items.length; ++i){
-		var _item = _items[i];
-		if(isArmatureItem(_item)){
-			formatName(_item);
-			var _itemXML = <{ARMATURE} {A_NAME}={_item.name} scale ={1}/>
-			_xml.appendChild(_itemXML);
+	var xml = 
+		<{DRAGON_BONES}
+			{A_NAME}={_currentDomName}
+		/>;
+	for each(item in items)
+	{
+		if(isArmatureItem(item))
+		{
+			formatName(item);
+			xml.appendChild(
+				<{ARMATURE} 
+					{A_NAME}={item.name} 
+					{A_SCALE} ={1}
+				/>
+			);
 		}
 	}
-	return _xml.toXMLString();
-}
-
-dragonBones.generateArmature = function(_armatureName, _scale, _isNewXML, _isChildArmature){
-	var _item = currentDom.library.items[currentDom.library.findItemIndex(_armatureName)];
-	if(!_item){
-		return false;
-	}
-	if(_isNewXML){
-		xml = <{SKELETON} {A_NAME}={currentDomName} {A_FRAME_RATE}={currentDom.frameRate}/>;
-		armaturesXML = <{ARMATURES}/>;
-		animationsXML = <{ANIMATIONS}/>;
-		xml.appendChild(armaturesXML);
-		xml.appendChild(animationsXML);
-	}
-	if(armaturesXML[ARMATURE].(@name == _armatureName)[0]){
-		return false;
-	}
-	
-	armatureXML = <{ARMATURE} {A_NAME}={_armatureName}/>;
-	armaturesXML.appendChild(armatureXML);
-	animationXML = <{ANIMATION} {A_NAME}={_armatureName}/>;
-	armatureConnectionXML = _item.hasData(ARMATURE_DATA)?XML(_item.getData(ARMATURE_DATA)):armatureXML;
-
-	var _layersFiltered = isArmatureItem(_item, _isChildArmature);
-	var _mainLayer = _layersFiltered.shift();
-	var _mainFrameList = getMainFrameList(filterKeyFrames(_mainLayer.frames));
-	for each(var _mainFrame in _mainFrameList){
-		generateMovement(_item, _mainFrame, _layersFiltered);
-	}
-	
-	//setArmatureConnection(_item, armatureXML.toXMLString());
-	
-	//if frame count > 1, the skeleton have animation.
-	if(_mainLayer.frameCount > 1){
-		animationsXML.appendChild(animationXML);
-	}
-	
 	return xml.toXMLString();
 }
 
-dragonBones.clearTextureSWFItem = function(){
-	if(!currentDom.library.itemExists(TEXTURE_SWF_ITEM)){
-		currentDom.library.addNewItem(MOVIE_CLIP, TEXTURE_SWF_ITEM);
+dragonBones.generateArmature = function(armatureName, isChildArmature, newGenerate)
+{
+	var item = _currentDom.library.items[_currentDom.library.findItemIndex(armatureName)];
+	if(!item)
+	{
+		return false;
 	}
-	currentDom.library.editItem(TEXTURE_SWF_ITEM);
-	xml = null;
-	armaturesXML = null;
-	animationsXML = null;
-
-	armatureXML = null;
-	animationXML = null;
-	armatureConnectionXML = null;
-	
-	var _timeline = currentDom.getTimeline();
-	_timeline.currentLayer = 0;
-	_timeline.removeFrames(0, _timeline.frameCount);
-	_timeline.insertBlankKeyframe(0);
-	_timeline.insertBlankKeyframe(1);
-	return <{TEXTURE_ATLAS} {A_NAME}={currentDomName}/>.toXMLString();
-}
-
-dragonBones.addTextureToSWFItem = function(_textureName, _isLast){
-	var _item = currentDom.library.items[currentDom.library.findItemIndex(_textureName)];
-	if(!_item){
+	if(!_xml || newGenerate)
+	{
+		_xml = 
+			<{DRAGON_BONES}
+				{A_NAME}={_currentDomName} 
+				{A_FRAME_RATE}={_currentDom.frameRate}
+			/>;
+	}
+	else if(_xml[ARMATURE].(@name == armatureName)[0])
+	{
 		return false;
 	}
 	
-	var _timeline = currentDom.getTimeline();
-	_timeline.currentFrame = 0;
-	helpPoint.x = helpPoint.y = 0;
-	var _tryTimes = 0;
-	var _putSuccess = false;
-	var _symbol;
-	currentDom.selectNone();
-	do{
-		_putSuccess = currentDom.library.addItemToDocument(helpPoint, _textureName);
-		_symbol = currentDom.selection[0]
-		_tryTimes ++;
-	}while((!_putSuccess || !_symbol) && _tryTimes < 5);
-	if(!_symbol){
+	var armatureXML = 
+		<{ARMATURE} {A_NAME}={armatureName}>
+			<{SKIN} {A_NAME}=""/>
+		</{ARMATURE}>;
+	appendXML(_xml, armatureXML);
+	
+	var layersFiltered = isArmatureItem(item, isChildArmature);
+	var mainLayer = layersFiltered.shift();
+	var mainFrameList = getMainFrameList(mainLayer.frames);
+	for each(var mainFrame in mainFrameList)
+	{
+		generateAnimation(item, mainFrame, layersFiltered, armatureXML);
+	}
+	
+	return _xml.toXMLString();
+}
+
+dragonBones.clearTextureSWFItem = function()
+{
+	if(!_currentDom.library.itemExists(TEXTURE_SWF_ITEM))
+	{
+		_currentDom.library.addNewItem(MOVIE_CLIP, TEXTURE_SWF_ITEM);
+	}
+	_currentDom.library.editItem(TEXTURE_SWF_ITEM);
+	
+	_xml = null;
+	
+	var timeline = _currentDom.getTimeline();
+	timeline.currentLayer = 0;
+	timeline.removeFrames(0, timeline.frameCount);
+	timeline.insertBlankKeyframe(0);
+	timeline.insertBlankKeyframe(1);
+	return true;
+}
+
+dragonBones.addTextureToSWFItem = function(textureName, isLast)
+{
+	var item = _currentDom.library.items[_currentDom.library.findItemIndex(textureName)];
+	if(!item)
+	{
+		return false;
+	}
+	
+	var timeline = _currentDom.getTimeline();
+	timeline.currentFrame = 0;
+	_helpTransform.x = _helpTransform.y = 0;
+	var tryTimes = 0;
+	var putSuccess = false;
+	var symbol;
+	_currentDom.selectNone();
+	do
+	{
+		putSuccess = _currentDom.library.addItemToDocument(_helpTransform, textureName);
+		symbol = _currentDom.selection[0]
+		tryTimes ++;
+	}
+	while((!putSuccess || !symbol) && tryTimes < 5);
+	if(!symbol)
+	{
 		trace("内存不足导致放置贴图失败！请尝试重新导入。");
 		return false;
 	}
-	switch(_symbol.instanceType)
+	switch(symbol.instanceType)
 	{
 		case SYMBOL:
-			if(_symbol.symbolType != MOVIE_CLIP)
+			if(symbol.symbolType != MOVIE_CLIP)
 			{
-				_symbol.symbolType = MOVIE_CLIP
+				symbol.symbolType = MOVIE_CLIP
 			}
 			break;
 		case BITMAP:
-			var bitmapItem = _symbol.libraryItem;
+			var bitmapItem = symbol.libraryItem;
 			bitmapItem.linkageExportForAS = true;
 			bitmapItem.linkageClassName = bitmapItem.name;
 			break;
 	}
 	
-	var _subTextureXML = <{SUB_TEXTURE} {A_NAME}={_textureName}/>;
-	
-	if(_isLast){
-		_timeline.removeFrames(1, 1);
-		if(currentItemBackup){
-			currentDom.library.editItem(currentItemBackup.name);
-			currentDom.getTimeline().currentFrame = currentFrameBackup;
+	if(isLast)
+	{
+		timeline.removeFrames(1, 1);
+		if(_currentItemBackup)
+		{
+			_currentDom.library.editItem(_currentItemBackup.name);
+			_currentDom.getTimeline().currentFrame = _currentFrameBackup;
+			//select backup library items
 		}
-	}else{
-		_timeline.currentFrame = 1;
 	}
-	return _subTextureXML.toXMLString();
+	else
+	{
+		timeline.currentFrame = 1;
+	}
+	return textureName;
 }
 
-dragonBones.exportSWF = function(){
-	if(errorDOM()){
+dragonBones.exportSWF = function()
+{
+	if(errorDOM())
+	{
 		return "";
 	}
 	
-	if(!currentDom.library.itemExists(TEXTURE_SWF_ITEM)){
+	if(!_currentDom.library.itemExists(TEXTURE_SWF_ITEM))
+	{
 		return "";
 	}
-	var _folderURL = fl.configURI;
-	var _pathDelimiter;
-	if(_folderURL.indexOf("/")>=0){
-		_pathDelimiter = "/";
-	}else if(_folderURL.indexOf("\\")>=0){
-		_pathDelimiter = "\\";
-	}else{
+	var folderURL = fl.configURI;
+	if(folderURL.indexOf("/")>=0)
+	{
+		var pathDelimiter = "/";
+	}
+	else if(folderURL.indexOf("\\")>=0)
+	{
+		pathDelimiter = "\\";
+	}
+	else
+	{
 		return "";
 	}
-	_folderURL = _folderURL + "WindowSWF" + _pathDelimiter + SKELETON_PANEL;
-	if(!FLfile.exists(_folderURL)){
-		FLfile.createFolder(_folderURL);
+	folderURL = folderURL + "WindowSWF" + pathDelimiter + PANEL_FOLDER;
+	if(!FLfile.exists(folderURL))
+	{
+		FLfile.createFolder(folderURL);
 	}
-	var _swfURL = _folderURL + _pathDelimiter + TEXTURE_SWF;
-	currentDom.library.items[currentDom.library.findItemIndex(TEXTURE_SWF_ITEM)].exportSWF(_swfURL);
-	return _swfURL;
+	var swfURL = folderURL + pathDelimiter + TEXTURE_SWF;
+	_currentDom.library.items[_currentDom.library.findItemIndex(TEXTURE_SWF_ITEM)].exportSWF(swfURL);
+	return swfURL;
 }
 
 //Write armatureConnection data by armatureName
-dragonBones.changeArmatureConnection = function(_armatureName, _data){
-	if(errorDOM()){
+dragonBones.changeArmatureConnection = function(armatureName, data)
+{
+	if(errorDOM())
+	{
 		return false;
 	}
-	var _item = currentDom.library.items[currentDom.library.findItemIndex(_armatureName)];
-	if(!_item){
-		trace("cannot find " + _armatureName + " element，please make sure your fla file is synchronized！");
+	var item = _currentDom.library.items[_currentDom.library.findItemIndex(armatureName)];
+	if(!item)
+	{
+		trace("cannot find " + armatureName + " element，please make sure your fla file is synchronized！");
 		return false;
 	}
-	_data = XML(_data).toXMLString();
-	_data = replaceString(_data, "&lt;", "<");
-	_data = replaceString(_data, "&gt;", ">");
-	setArmatureConnection(_item, _data);
-	return true;
-}
-
-dragonBones.changeMovement = function(_armatureName, _movementName, _data){
-	if(errorDOM()){
-		return false;
-	}
-	var _item = currentDom.library.items[currentDom.library.findItemIndex(_armatureName)];
-	if(!_item){
-		trace("cannot find " + _armatureName + " element，please make sure your fla file is synchronized！");
-		return false;
-	}
+	data = XML(data).toXMLString();
+	data = replaceString(data, "&lt;", "<");
+	data = replaceString(data, "&gt;", ">");
 	
-	_data = XML(_data).toXMLString();
-	_data = replaceString(_data, "&lt;", "<");
-	_data = replaceString(_data, "&gt;", ">");
-	_data = XML(_data);
-	delete _data[BONE].*;
-	
-	var _animationXML;
-	if(_item.hasData(ANIMATION_DATA)){
-		_animationXML = XML(_item.getData(ANIMATION_DATA));
-	}else{
-		_animationXML = <{ANIMATION}/>;
-	}
-	var _movementXML = _animationXML[MOVEMENT].(@name == _movementName)[0];
-	if(_movementXML){
-		_animationXML[MOVEMENT][_movementXML.childIndex()] = _data;
-	}else{
-		_animationXML.appendChild(_data);
-	}
-	_item.addData(ANIMATION_DATA, STRING, _animationXML.toXMLString());
+	item.addData(ARMATURE_DATA, STRING, data);
 	//Jsfl api Or Flash pro bug
-	_item.symbolType = GRAPHIC;
-	_item.symbolType = MOVIE_CLIP;
+	item.symbolType = GRAPHIC;
+	item.symbolType = MOVIE_CLIP;
+	
 	return true;
 }
 
-dragonBones.copyMovement = function(targetArmatureName, sourceArmatureName, sourceMovementName, sourceMovementXML)
+dragonBones.changeAnimation = function(armatureName, animationName, data)
+{
+	if(errorDOM())
+	{
+		return false;
+	}
+	var item = _currentDom.library.items[_currentDom.library.findItemIndex(armatureName)];
+	if(!item)
+	{
+		trace("cannot find " + armatureName + " element，please make sure your fla file is synchronized！");
+		return false;
+	}
+	
+	data = XML(data).toXMLString();
+	data = replaceString(data, "&lt;", "<");
+	data = replaceString(data, "&gt;", ">");
+	data = XML(data);
+	delete data[TIMELINE].*;
+	delete data[FRAME];
+	
+	var animationsXML;
+	if(item.hasData(ANIMATION_DATA))
+	{
+		animationsXML = XML(item.getData(ANIMATION_DATA));
+	}
+	else
+	{
+		animationsXML = <{ANIMATION_DATA}/>;
+	}
+	var animationXML = animationsXML[ANIMATION].(@name == animationName)[0];
+	if(animationXML)
+	{
+		var childIndex = animationXML.childIndex();
+		delete animationsXML.elements()[childIndex];
+	}
+	animationsXML.appendChild(data);
+	
+	item.addData(ANIMATION_DATA, STRING, animationsXML.toXMLString());
+	//Jsfl api Or Flash pro bug
+	item.symbolType = GRAPHIC;
+	item.symbolType = MOVIE_CLIP;
+	return true;
+}
+
+dragonBones.copyAnimation = function(targetArmatureName, sourceArmatureName, sourceAnimationName, sourceAnimationXML)
 {
 	if(errorDOM())
 	{
 		return false;
 	}
 	
-	var targetArmature = currentDom.library.items[currentDom.library.findItemIndex(targetArmatureName)];
-	var sourceArmature = currentDom.library.items[currentDom.library.findItemIndex(sourceArmatureName)];
+	var targetArmature = _currentDom.library.items[_currentDom.library.findItemIndex(targetArmatureName)];
+	var sourceArmature = _currentDom.library.items[_currentDom.library.findItemIndex(sourceArmatureName)];
 	var unfoundName = !targetArmature?targetArmatureName:(!sourceArmature?sourceArmatureName:null);
 	if(unfoundName)
 	{
@@ -1100,10 +1319,10 @@ dragonBones.copyMovement = function(targetArmatureName, sourceArmatureName, sour
 	//获取 targetArmature 中的元件列表
 	var targetLayers = isArmatureItem(targetArmature);
 	var targetMainLayer = targetLayers.shift();
-	var targetMainFrameList = getMainFrameList(filterKeyFrames(targetMainLayer.frames));
+	var targetMainFrameList = getMainFrameList(targetMainLayer.frames);
 	for each(var mainFrame in targetMainFrameList)
 	{
-		if(mainFrame.frame.name == sourceMovementName)
+		if(mainFrame.frame.name == sourceAnimationName)
 		{
 			//拥有同名动画
 			return false;
@@ -1124,15 +1343,13 @@ dragonBones.copyMovement = function(targetArmatureName, sourceArmatureName, sour
 		targetMark[boneName] = targetTextureList;
 		for each(var frame in filterKeyFrames(layer.frames))
 		{
-			for each(var element in _frame.elements){
-				var boneSymbol = getBoneSymbol(element);
-				if(boneSymbol)
+			var boneSymbol = getBoneSymbol(frame.elements);
+			if(boneSymbol)
+			{
+				var textureName = boneSymbol.libraryItem.name;
+				if(targetTextureList.indexOf(textureName) == -1)
 				{
-					var textureName = boneSymbol.libraryItem.name;
-					if(targetTextureList.indexOf(textureName) == -1)
-					{
-						targetTextureList.push(textureName);
-					}
+					targetTextureList.push(textureName);
 				}
 			}
 		}
@@ -1140,20 +1357,20 @@ dragonBones.copyMovement = function(targetArmatureName, sourceArmatureName, sour
 	
 	var sourceLayers = isArmatureItem(sourceArmature);
 	var sourceMainLayer = sourceLayers[0];
-	var sourceMainFrameList = getMainFrameList(filterKeyFrames(sourceMainLayer.frames));
+	var sourceMainFrameList = getMainFrameList(sourceMainLayer.frames);
 	
 	for each(var mainFrame in sourceMainFrameList)
 	{
-		if(mainFrame.frame.name == sourceMovementName)
+		if(mainFrame.frame.name == sourceAnimationName)
 		{
 			break;
 		}
 	}
 	
-	sourceMovementXML = XML(sourceMovementXML).toXMLString();
-	sourceMovementXML = replaceString(sourceMovementXML, "&lt;", "<");
-	sourceMovementXML = replaceString(sourceMovementXML, "&gt;", ">");
-	sourceMovementXML = XML(sourceMovementXML);
+	sourceAnimationXML = XML(sourceAnimationXML).toXMLString();
+	sourceAnimationXML = replaceString(sourceAnimationXML, "&lt;", "<");
+	sourceAnimationXML = replaceString(sourceAnimationXML, "&gt;", ">");
+	sourceAnimationXML = XML(sourceAnimationXML);
 	
 	var sourceStartFrame = mainFrame.frame.startFrame;
 	var sourceDuration = mainFrame.duration;
@@ -1178,18 +1395,18 @@ dragonBones.copyMovement = function(targetArmatureName, sourceArmatureName, sour
 			}
 		}
 		
-		currentDom.library.editItem(sourceArmatureName);
+		_currentDom.library.editItem(sourceArmatureName);
 		sourceTimeline.currentLayer = sourceTimeline.layers.indexOf(layer);
 		sourceTimeline.copyFrames(sourceStartFrame, sourceStartFrame + sourceDuration);
 		
-		currentDom.library.editItem(targetArmatureName);
+		_currentDom.library.editItem(targetArmatureName);
 		targetTimeline.currentLayer = targetLayerIndex;
 		targetTimeline.pasteFrames(targetStartFrame, targetStartFrame + sourceDuration);
 		
 		if(boneName)
 		{
-			var movementBoneXML = sourceMovementXML[BONE].(@name == boneName)[0];
-			if(!movementBoneXML)
+			var timelineXML = sourceAnimationXML[TIMELINE].(@name == boneName)[0];
+			if(!timelineXML)
 			{
 				continue;
 			}
@@ -1200,61 +1417,62 @@ dragonBones.copyMovement = function(targetArmatureName, sourceArmatureName, sour
 			var copyTextureList = [];
 			var currentFrame = 0;
 			var frames = layer.frames;
-			for each(var frameXML in movementBoneXML[FRAME])
+			var frameXMLList = timelineXML[FRAME];
+			for each(var frameXML in frameXMLList)
 			{
 				var frame = frames[targetStartFrame + currentFrame];
 				currentFrame += Number(frameXML.@[A_DURATION]);
-				for each(var element in frame.elements){
-					var boneSymbol = getBoneSymbol(element);
-					if(!boneSymbol)
-					{
-						continue;
-					}
-					var textureName = boneSymbol.libraryItem.name;
-					var subListID = copyTextureList.indexOf(textureName);
-					if(subListID == -1)
-					{
-						subListID = copyTextureList.length;
-						copyTextureList.push(textureName);
-					}
-					if(subListID >= targetTextureList.length)
-					{
-						subListID = targetTextureList.length - 1;
-					}
-					textureName = targetTextureList[subListID];
-					targetTimeline.currentFrame = frame.startFrame;
-					currentDom.selectNone();
-					boneSymbol.selected = true;
-					currentDom.swapElement(textureName);
-					boneSymbol = currentDom.selection[0];
-					
-					helpPoint.x = Number(frameXML.@[A_X]);
-					helpPoint.y = Number(frameXML.@[A_Y]);
-					helpPoint.scaleX = Number(frameXML.@[A_SCALE_X]);
-					helpPoint.scaleY = Number(frameXML.@[A_SCALE_Y]);
-					helpPoint.skewX = Number(frameXML.@[A_SKEW_X]) / 180 * Math.PI;
-					helpPoint.skewY = Number(frameXML.@[A_SKEW_Y]) / 180 * Math.PI;
-					helpPoint.pivotX = Number(frameXML.@[A_PIVOT_X]);
-					helpPoint.pivotY = Number(frameXML.@[A_PIVOT_Y]);
-					
-					var matrix = boneSymbol.matrix;
-					matrix.a = helpPoint.scaleX * Math.cos(helpPoint.skewY)
-					matrix.b = helpPoint.scaleX * Math.sin(helpPoint.skewY)
-					matrix.c = -helpPoint.scaleY * Math.sin(helpPoint.skewX);
-					matrix.d = helpPoint.scaleY * Math.cos(helpPoint.skewX);
-					matrix.tx = helpPoint.x - (matrix.a * helpPoint.pivotX + matrix.c * helpPoint.pivotY);
-					matrix.ty = helpPoint.y - (matrix.b * helpPoint.pivotX + matrix.d * helpPoint.pivotY);
-					
-					helpPoint.x = helpPoint.pivotX;
-					helpPoint.y = helpPoint.pivotY;
-					boneSymbol.matrix = matrix;
-					boneSymbol.setTransformationPoint(helpPoint);
+				var boneSymbol = getBoneSymbol(frame.elements);
+				if(!boneSymbol)
+				{
+					continue;
 				}
+				var textureName = boneSymbol.libraryItem.name;
+				var subListID = copyTextureList.indexOf(textureName);
+				if(subListID == -1)
+				{
+					subListID = copyTextureList.length;
+					copyTextureList.push(textureName);
+				}
+				if(subListID >= targetTextureList.length)
+				{
+					subListID = targetTextureList.length - 1;
+				}
+				textureName = targetTextureList[subListID];
+				targetTimeline.currentFrame = frame.startFrame;
+				_currentDom.selectNone();
+				boneSymbol.selected = true;
+				_currentDom.swapElement(textureName);
+				boneSymbol = _currentDom.selection[0];
+				
+				_helpTransform.x = Number(frameXML.@[A_X]);
+				_helpTransform.y = Number(frameXML.@[A_Y]);
+				_helpTransform.scaleX = Number(frameXML.@[A_SCALE_X]);
+				_helpTransform.scaleY = Number(frameXML.@[A_SCALE_Y]);
+				_helpTransform.skewX = Number(frameXML.@[A_SKEW_X]) / 180 * Math.PI;
+				_helpTransform.skewY = Number(frameXML.@[A_SKEW_Y]) / 180 * Math.PI;
+				//
+				_helpTransform.pivotX = - Number(frameXML.@[A_PIVOT_X]);
+				_helpTransform.pivotY = - Number(frameXML.@[A_PIVOT_Y]);
+				
+				var matrix = boneSymbol.matrix;
+				matrix.a = _helpTransform.scaleX * Math.cos(_helpTransform.skewY)
+				matrix.b = _helpTransform.scaleX * Math.sin(_helpTransform.skewY)
+				matrix.c = -_helpTransform.scaleY * Math.sin(_helpTransform.skewX);
+				matrix.d = _helpTransform.scaleY * Math.cos(_helpTransform.skewX);
+				matrix.tx = _helpTransform.x - (matrix.a * _helpTransform.pivotX + matrix.c * _helpTransform.pivotY);
+				matrix.ty = _helpTransform.y - (matrix.b * _helpTransform.pivotX + matrix.d * _helpTransform.pivotY);
+				
+				_helpTransform.x = _helpTransform.pivotX;
+				_helpTransform.y = _helpTransform.pivotY;
+				boneSymbol.matrix = matrix;
+				boneSymbol.setTransformationPoint(_helpTransform);
 			}
 		}
 	}
 }
 
 })();
+
 
 if(didExist)fl.trace("DragonBones JSFL reloaded");

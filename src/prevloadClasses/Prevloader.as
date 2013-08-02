@@ -10,6 +10,7 @@ package prevloadClasses
 	import flash.events.UncaughtErrorEvent;
 	import flash.geom.Rectangle;
 	import flash.system.ApplicationDomain;
+	import flash.system.Capabilities;
 	import flash.system.LoaderContext;
 	
 	import mx.events.FlexEvent;

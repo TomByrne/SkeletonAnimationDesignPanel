@@ -11,23 +11,23 @@ package control
 	import message.MessageDispatcher;
 	
 	import model.ImportDataProxy;
-	import model.SkeletonXMLProxy;
+	import model.XMLDataProxy;
 	
 	import modifySWF.tirm;
 	
 	import utils.BitmapDataUtil;
 	import utils.PNGEncoder;
 
-	public class RemoveArmatureCommon
+	public class RemoveArmatureCommand
 	{
-		public static const instance:RemoveArmatureCommon = new RemoveArmatureCommon();
+		public static const instance:RemoveArmatureCommand = new RemoveArmatureCommand();
 		
 		private var _loaderContext:LoaderContext;
 		
-		private var _skeletonXMLProxy:SkeletonXMLProxy;
+		private var _xmlDataProxy:XMLDataProxy;
 		private var _textureBytes:ByteArray;
 		
-		public function RemoveArmatureCommon()
+		public function RemoveArmatureCommand()
 		{
 			_loaderContext = new LoaderContext(false)
 			_loaderContext.allowCodeImport = true;
@@ -35,9 +35,9 @@ package control
 		
 		public function removeArmature(armatureName:String):Boolean
 		{
-			var rawSkeletonXMLProxy:SkeletonXMLProxy = ImportDataProxy.getInstance().skeletonXMLProxy;
-			_skeletonXMLProxy = rawSkeletonXMLProxy.copy();
-			if(!_skeletonXMLProxy.removeArmature(armatureName))
+			var rawXMLDataProxy:XMLDataProxy = ImportDataProxy.getInstance().xmlDataProxy;
+			_xmlDataProxy = rawXMLDataProxy.clone();
+			if(!_xmlDataProxy.removeArmature(armatureName))
 			{
 				return false;
 			}
@@ -47,7 +47,7 @@ package control
 				loadTextureBytes(
 					tirm(
 						ImportDataProxy.getInstance().textureBytes, 
-						_skeletonXMLProxy.modifySubTextureSize(null)
+						_xmlDataProxy.getTextureAtlasXMLWithPivot()
 					)
 				);
 			}
@@ -55,10 +55,10 @@ package control
 			{
 				var subBitmapDataDic:Object = BitmapDataUtil.getSubBitmapDataDic(
 					ImportDataProxy.getInstance().textureAtlas.bitmapData, 
-					rawSkeletonXMLProxy.getSubTextureRectDic()
+					rawXMLDataProxy.getSubTextureRectMap()
 				);
 				
-				var rectDic:Object = _skeletonXMLProxy.getSubTextureRectDic();
+				var rectDic:Object = _xmlDataProxy.getSubTextureRectMap();
 				
 				for(var subTextureName:String in subBitmapDataDic)
 				{
@@ -72,13 +72,13 @@ package control
 				var bitmapData:BitmapData = BitmapDataUtil.getMergeBitmapData(
 					subBitmapDataDic, 
 					rectDic, 
-					_skeletonXMLProxy.textureAtlasWidth, 
-					_skeletonXMLProxy.textureAtlasHeight
+					_xmlDataProxy.textureAtlasWidth, 
+					_xmlDataProxy.textureAtlasHeight
 				);
 				
 				MessageDispatcher.dispatchEvent(
 					MessageDispatcher.IMPORT_COMPLETE, 
-					_skeletonXMLProxy, 
+					_xmlDataProxy, 
 					PNGEncoder.encode(bitmapData), 
 					bitmapData, 
 					false
@@ -104,7 +104,7 @@ package control
 			
 			MessageDispatcher.dispatchEvent(
 				MessageDispatcher.IMPORT_COMPLETE, 
-				_skeletonXMLProxy, 
+				_xmlDataProxy, 
 				_textureBytes, 
 				content, 
 				ImportDataProxy.getInstance().isExportedSource

@@ -1,6 +1,8 @@
 package control
 {
-	import dragonBones.objects.XMLDataParser;
+	import com.adobe.serialization.json.JSON;
+	
+	import dragonBones.objects.DataParser;
 	import dragonBones.utils.ConstValues;
 	
 	import flash.display.BitmapData;
@@ -16,18 +18,18 @@ package control
 	
 	import model.ImportDataProxy;
 	import model.JSFLProxy;
-	import model.SkeletonXMLProxy;
+	import model.XMLDataProxy;
 	
 	import utils.BitmapDataUtil;
 	import utils.GlobalConstValues;
 	import utils.PNGEncoder;
+	import utils.xmlToObject;
 	
 	import zero.zip.Zip;
 	
 	public class ExportDataCommand
 	{
 		public static const instance:ExportDataCommand = new ExportDataCommand();
-		
 		
 		private var _fileREF:FileReference;
 		private var _exportType:uint;
@@ -36,7 +38,7 @@ package control
 		
 		private var _importDataProxy:ImportDataProxy;
 		
-		private var _skeletonXMLProxy:SkeletonXMLProxy;
+		private var _xmlDataProxy:XMLDataProxy;
 		private var _bitmapData:BitmapData;
 		
 		public function ExportDataCommand()
@@ -53,8 +55,19 @@ package control
 				return;
 			}
 			_isExporting = true;
+			
 			_exportType = exportType;
 			_exportScale = exportScale;
+			
+			switch(_exportType)
+			{
+				case 0:
+				case 2:
+				case 5:
+					_exportScale = 1;
+					break;
+			}
+			
 			exportStart();
 		}
 		
@@ -64,18 +77,18 @@ package control
 			var zip:Zip;
 			var date:Date;
 			
-			_skeletonXMLProxy = _importDataProxy.skeletonXMLProxy;
+			_xmlDataProxy = _importDataProxy.xmlDataProxy;
 			_bitmapData = _importDataProxy.textureAtlas.bitmapData;
 			
 			if(_exportScale != 1)
 			{
-				_skeletonXMLProxy = _skeletonXMLProxy.copy();
+				_xmlDataProxy = _xmlDataProxy.clone();
 				var subBitmapDataDic:Object;
 				var movieClip:MovieClip = _importDataProxy.textureAtlas.movieClip;
 				if(movieClip && movieClip.totalFrames >= 3)
 				{
 					subBitmapDataDic = {};
-					for each (var displayName:String in _skeletonXMLProxy.getDisplayList())
+					for each (var displayName:String in _xmlDataProxy.getSubTextureListFromDisplayList())
 					{
 						movieClip.gotoAndStop(movieClip.totalFrames);
 						movieClip.gotoAndStop(displayName);
@@ -86,20 +99,23 @@ package control
 				{
 					subBitmapDataDic = BitmapDataUtil.getSubBitmapDataDic(
 						_bitmapData,
-						_skeletonXMLProxy.getSubTextureRectDic()
+						_xmlDataProxy.getSubTextureRectMap()
 					);
 				}
 				
-				_skeletonXMLProxy.scaleData(_exportScale);
+				_xmlDataProxy.scaleData(_exportScale);
 					
 				_bitmapData = BitmapDataUtil.getMergeBitmapData(
 					subBitmapDataDic,
-					_skeletonXMLProxy.getSubTextureRectDic(),
-					_skeletonXMLProxy.textureAtlasWidth,
-					_skeletonXMLProxy.textureAtlasHeight,
+					_xmlDataProxy.getSubTextureRectMap(),
+					_xmlDataProxy.textureAtlasWidth,
+					_xmlDataProxy.textureAtlasHeight,
 					_exportScale
 				);
 			}
+			
+			var isSWF:Boolean = _exportType == 0 || _exportType == 2 || _exportType == 5;
+			var isXML:Boolean = _exportType == 2 || _exportType == 3 || _exportType == 4;
 			
 			switch(_exportType)
 			{
@@ -110,12 +126,12 @@ package control
 						if(dataBytes)
 						{
 							exportSave(
-								XMLDataParser.compressData(
-									_skeletonXMLProxy.skeletonXML, 
-									_skeletonXMLProxy.textureAtlasXML, 
+								DataParser.compressData(
+									xmlToObject(_xmlDataProxy.xml, GlobalConstValues.XML_LIST_NAMES), 
+									xmlToObject(_xmlDataProxy.textureAtlasXML, GlobalConstValues.XML_LIST_NAMES), 
 									dataBytes
 								), 
-								_importDataProxy.skeletonName + GlobalConstValues.OUTPUT_SUFFIX + GlobalConstValues.SWF_SUFFIX
+								_importDataProxy.data.name + GlobalConstValues.SWF_SUFFIX
 							);
 							return;
 						}
@@ -132,12 +148,12 @@ package control
 						if(dataBytes)
 						{
 							exportSave(
-								XMLDataParser.compressData(
-									_skeletonXMLProxy.skeletonXML, 
-									_skeletonXMLProxy.textureAtlasXML, 
+								DataParser.compressData(
+									xmlToObject(_xmlDataProxy.xml, GlobalConstValues.XML_LIST_NAMES), 
+									xmlToObject(_xmlDataProxy.textureAtlasXML, GlobalConstValues.XML_LIST_NAMES), 
 									dataBytes
 								), 
-								_importDataProxy.skeletonName + GlobalConstValues.OUTPUT_SUFFIX + GlobalConstValues.PNG_SUFFIX
+								_importDataProxy.data.name + GlobalConstValues.PNG_SUFFIX
 							);
 							return;
 						}
@@ -149,9 +165,11 @@ package control
 					}
 				case 2:
 				case 3:
+				case 5:
+				case 6:
 					try
 					{
-						if(_exportType == 2)
+						if(isSWF)
 						{
 							dataBytes = getSWFBytes();
 						}
@@ -166,22 +184,38 @@ package control
 							zip = new Zip();
 							zip.add(
 								dataBytes, 
-								GlobalConstValues.TEXTURE_NAME + (_exportType == 2?GlobalConstValues.SWF_SUFFIX:GlobalConstValues.PNG_SUFFIX),
+								GlobalConstValues.TEXTURE_ATLAS_DATA_NAME + (isSWF?GlobalConstValues.SWF_SUFFIX:GlobalConstValues.PNG_SUFFIX),
 								date
 							);
-							zip.add(
-								_skeletonXMLProxy.skeletonXML.toXMLString(), 
-								GlobalConstValues.SKELETON_XML_NAME, 
-								date
-							);
-							zip.add(
-								_skeletonXMLProxy.textureAtlasXML.toXMLString(), 
-								GlobalConstValues.TEXTURE_ATLAS_XML_NAME, 
-								date
-							);
+							if(isXML)
+							{
+								zip.add(
+									_xmlDataProxy.xml.toXMLString(),
+									GlobalConstValues.DRAGON_BONES_DATA_NAME + GlobalConstValues.XML_SUFFIX, 
+									date
+								);
+								zip.add(
+									_xmlDataProxy.textureAtlasXML.toXMLString(),
+									GlobalConstValues.TEXTURE_ATLAS_DATA_NAME + GlobalConstValues.XML_SUFFIX, 
+									date
+								);
+							}
+							else
+							{
+								zip.add(
+									com.adobe.serialization.json.JSON.encode(xmlToObject(_xmlDataProxy.xml, GlobalConstValues.XML_LIST_NAMES)), 
+									GlobalConstValues.DRAGON_BONES_DATA_NAME + GlobalConstValues.JSON_SUFFIX, 
+									date
+								);
+								zip.add(
+									com.adobe.serialization.json.JSON.encode(xmlToObject(_xmlDataProxy.textureAtlasXML, GlobalConstValues.XML_LIST_NAMES)), 
+									GlobalConstValues.TEXTURE_ATLAS_DATA_NAME + GlobalConstValues.JSON_SUFFIX, 
+									date
+								);
+							}
 							exportSave(
 								zip.encode(), 
-								_importDataProxy.skeletonName + GlobalConstValues.OUTPUT_SUFFIX + GlobalConstValues.ZIP_SUFFIX
+								_importDataProxy.data.name + GlobalConstValues.ZIP_SUFFIX
 							);
 							zip.clear();
 							return;
@@ -193,47 +227,63 @@ package control
 						break;
 					}
 				case 4:
+				case 7:
 					try
 					{
 						date = new Date();
 						zip = new Zip();
 						
-						if(_skeletonXMLProxy == _importDataProxy.skeletonXMLProxy)
+						if(_xmlDataProxy == _importDataProxy.xmlDataProxy)
 						{
-							_skeletonXMLProxy = _skeletonXMLProxy.copy();
+							_xmlDataProxy = _xmlDataProxy.clone();
 						}
-						_skeletonXMLProxy.changePath();
+						_xmlDataProxy.changePath();
 						
 						
 						subBitmapDataDic = BitmapDataUtil.getSubBitmapDataDic(
 							_bitmapData, 
-							_skeletonXMLProxy.getSubTextureRectDic()
+							_xmlDataProxy.getSubTextureRectMap()
 						);
 						for(var subTextureName:String in subBitmapDataDic)
 						{
 							var subBitmapData:BitmapData = subBitmapDataDic[subTextureName];
 							zip.add(
 								PNGEncoder.encode(subBitmapData), 
-								GlobalConstValues.TEXTURE_NAME + "/" + subTextureName + GlobalConstValues.PNG_SUFFIX, 
+								GlobalConstValues.TEXTURE_ATLAS_DATA_NAME + "/" + subTextureName + GlobalConstValues.PNG_SUFFIX, 
 								date
 							);
 							subBitmapData.dispose();
 						}
-						
-						zip.add(
-							_skeletonXMLProxy.skeletonXML.toXMLString(), 
-							GlobalConstValues.SKELETON_XML_NAME, 
-							date
-						);
-						zip.add(
-							_skeletonXMLProxy.textureAtlasXML.toXMLString(), 
-							GlobalConstValues.TEXTURE_ATLAS_XML_NAME, 
-							date
-						);
+						if(isXML)
+						{
+							zip.add(
+								_xmlDataProxy.xml.toXMLString(), 
+								GlobalConstValues.DRAGON_BONES_DATA_NAME + GlobalConstValues.XML_SUFFIX, 
+								date
+							);
+							zip.add(
+								_xmlDataProxy.textureAtlasXML.toXMLString(), 
+								GlobalConstValues.TEXTURE_ATLAS_DATA_NAME + GlobalConstValues.XML_SUFFIX, 
+								date
+							);
+						}
+						else
+						{
+							zip.add(
+								com.adobe.serialization.json.JSON.encode(xmlToObject(_xmlDataProxy.xml, GlobalConstValues.XML_LIST_NAMES)), 
+								GlobalConstValues.DRAGON_BONES_DATA_NAME + GlobalConstValues.JSON_SUFFIX, 
+								date
+							);
+							zip.add(
+								com.adobe.serialization.json.JSON.encode(xmlToObject(_xmlDataProxy.textureAtlasXML, GlobalConstValues.XML_LIST_NAMES)), 
+								GlobalConstValues.TEXTURE_ATLAS_DATA_NAME + GlobalConstValues.JSON_SUFFIX, 
+								date
+							);
+						}
 						
 						exportSave(
 							zip.encode(), 
-							_importDataProxy.skeletonName + GlobalConstValues.OUTPUT_SUFFIX + GlobalConstValues.ZIP_SUFFIX
+							_importDataProxy.data.name + GlobalConstValues.ZIP_SUFFIX
 						);
 						zip.clear();
 						return;

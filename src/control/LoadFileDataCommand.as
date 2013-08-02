@@ -1,14 +1,19 @@
 package control
 {
+	import com.adobe.serialization.json.JSON;
+	
+	import dragonBones.objects.DataParser;
 	import dragonBones.objects.DecompressedData;
-	import dragonBones.objects.XMLDataParser;
 	import dragonBones.utils.BytesType;
+	import dragonBones.utils.ConstValues;
+	import dragonBones.utils.checkBytesTailisXML;
 	
 	import flash.display.BitmapData;
 	import flash.display.Loader;
 	import flash.events.Event;
 	import flash.events.IOErrorEvent;
 	import flash.events.ProgressEvent;
+	import flash.geom.Rectangle;
 	import flash.net.FileFilter;
 	import flash.net.FileReference;
 	import flash.net.URLLoader;
@@ -19,11 +24,13 @@ package control
 	
 	import message.MessageDispatcher;
 	
-	import model.SkeletonXMLProxy;
+	import model.XMLDataProxy;
 	
 	import utils.BitmapDataUtil;
 	import utils.GlobalConstValues;
 	import utils.PNGEncoder;
+	import utils.formatSpineData;
+	import utils.objectToXML;
 	
 	import zero.zip.Zip;
 	import zero.zip.ZipFile;
@@ -32,14 +39,17 @@ package control
 	{
 		public static const instance:LoadFileDataCommand = new LoadFileDataCommand();
 		
-		private static const FILE_FILTER_ARRAY:Array = [new FileFilter("Exported data", "*." + String(["swf", "png", "zip"]).replace(/\,/g, ";*."))];
+		private static const FILE_FILTER_ARRAY:Array = [new FileFilter("Exported Data", "*." + String(["swf", "dbswf", "png", "zip"]).replace(/\,/g, ";*."))];
+		private static const SPINE_FILTER_ARRAY:Array = [new FileFilter("Spine Data", "*." + String(["zip"]).replace(/\,/g, ";*."))];
 	
 		private var _fileREF:FileReference;
 		private var _urlLoader:URLLoader;
 		private var _loaderContext:LoaderContext;
 		
-		private var _skeletonXMLProxy:SkeletonXMLProxy;
+		private var _xmlDataProxy:XMLDataProxy;
 		private var _bitmapData:BitmapData;
+		private var _spineObject:Object;
+		private var _fileType:int;
 		
 		private var _isLoading:Boolean;
 		public function isLoading():Boolean
@@ -55,12 +65,14 @@ package control
 			_loaderContext.allowCodeImport = true;
 		}
 		
-		public function load(url:String = null):void
+		//allType
+		public function load(url:String = null, fileType:int = 0):void
 		{
 			if(_isLoading)
 			{
 				return;
 			}
+			_fileType = fileType;
 			if(url)
 			{
 				_isLoading = true;
@@ -74,7 +86,15 @@ package control
 			else
 			{
 				_fileREF.addEventListener(Event.SELECT, onFileHaneler);
-				_fileREF.browse(FILE_FILTER_ARRAY);
+				switch(_fileType)
+				{
+					case 0:
+						_fileREF.browse(FILE_FILTER_ARRAY);
+						break;
+					case 1:
+						_fileREF.browse(SPINE_FILTER_ARRAY);
+						break;
+				}
 			}
 		}
 	
@@ -91,7 +111,7 @@ package control
 					break;
 				case ProgressEvent.PROGRESS:
 					var progressEvent:ProgressEvent = e as ProgressEvent;
-					MessageDispatcher.dispatchEvent(MessageDispatcher.LOAD_FILEDATA_PROGRESS, progressEvent.bytesLoaded / progressEvent.bytesTotal );
+					MessageDispatcher.dispatchEvent(MessageDispatcher.LOAD_FILEDATA_PROGRESS, progressEvent.bytesLoaded / progressEvent.bytesTotal);
 					break;
 				case Event.COMPLETE:
 					_urlLoader.removeEventListener(Event.COMPLETE, onURLLoaderHandler);
@@ -122,8 +142,10 @@ package control
 		
 		private function setData(fileData:ByteArray):void
 		{
+			_spineObject = null;
 			_isLoading = false;
 			var dataType:String = BytesType.getType(fileData);
+			
 			switch(dataType)
 			{
 				case BytesType.SWF:
@@ -131,45 +153,75 @@ package control
 				case BytesType.JPG:
 					try
 					{
-						var decompressedData:DecompressedData = XMLDataParser.decompressData(fileData);
-						_skeletonXMLProxy = new SkeletonXMLProxy();
-						_skeletonXMLProxy.skeletonXML = decompressedData.skeletonXML;
-						_skeletonXMLProxy.textureAtlasXML = decompressedData.textureAtlasXML;
-						
-						MessageDispatcher.dispatchEvent(MessageDispatcher.LOAD_FILEDATA_COMPLETE, _skeletonXMLProxy, decompressedData.textureBytes);
+						var decompressedData:DecompressedData = DataParser.decompressData(fileData);
+						_xmlDataProxy = new XMLDataProxy();
+						if(!(decompressedData.dragonBonesData is XML))
+						{
+							decompressedData.dragonBonesData = objectToXML(decompressedData.dragonBonesData, ConstValues.DRAGON_BONES);
+						}
+						_xmlDataProxy.xml = decompressedData.dragonBonesData as XML;
+						if(!(decompressedData.textureAtlasData is XML))
+						{
+							decompressedData.textureAtlasData = objectToXML(decompressedData.textureAtlasData, ConstValues.TEXTURE_ATLAS);
+						}
+						_xmlDataProxy.textureAtlasXML = decompressedData.textureAtlasData as XML;
+						MessageDispatcher.dispatchEvent(MessageDispatcher.LOAD_FILEDATA_COMPLETE, _xmlDataProxy, decompressedData.textureBytes);
 						return;
 					}
-					catch(_e:Error)
+					catch(e:Error)
 					{
 						break;
 					}
 				case BytesType.ZIP:
 					try
 					{
-						var images:Object;
 						var zip:Zip = new Zip();
 						zip.decode(fileData);
-						_skeletonXMLProxy = new SkeletonXMLProxy();
+						_xmlDataProxy = new XMLDataProxy();
 						
+						var images:Object;
+						var object:Object;
+						var name:String;
 						for each(var zipFile:ZipFile in zip.fileV)
 						{
 							if(!zipFile.isDirectory)
 							{
-								
-								if(zipFile.name == GlobalConstValues.SKELETON_XML_NAME)
+								if(
+									zipFile.name == GlobalConstValues.DRAGON_BONES_DATA_NAME + GlobalConstValues.XML_SUFFIX ||
+									zipFile.name == GlobalConstValues.DRAGON_BONES_DATA_NAME + GlobalConstValues.JSON_SUFFIX
+								)
 								{
-									_skeletonXMLProxy.skeletonXML = XML(zipFile.data);
+									if(checkBytesTailisXML(zipFile.data))
+									{
+										_xmlDataProxy.xml = XML(zipFile.data);
+									}
+									else
+									{
+										object = com.adobe.serialization.json.JSON.decode(zipFile.data.toString());
+										_xmlDataProxy.xml = objectToXML(object, ConstValues.DRAGON_BONES);
+									}
 								}
-								else if(zipFile.name == GlobalConstValues.TEXTURE_ATLAS_XML_NAME)
+								else if(
+									zipFile.name == GlobalConstValues.TEXTURE_ATLAS_DATA_NAME + GlobalConstValues.XML_SUFFIX ||
+									zipFile.name == GlobalConstValues.TEXTURE_ATLAS_DATA_NAME + GlobalConstValues.JSON_SUFFIX
+								)
 								{
-									_skeletonXMLProxy.textureAtlasXML = XML(zipFile.data);
+									if(checkBytesTailisXML(zipFile.data))
+									{
+										_xmlDataProxy.textureAtlasXML = XML(zipFile.data);
+									}
+									else
+									{
+										object = com.adobe.serialization.json.JSON.decode(zipFile.data.toString());
+										_xmlDataProxy.textureAtlasXML = objectToXML(object, ConstValues.TEXTURE_ATLAS);
+									}
 								}
-								else if(zipFile.name.indexOf(GlobalConstValues.TEXTURE_NAME) == 0)
+								else if(zipFile.name.indexOf(GlobalConstValues.TEXTURE_ATLAS_DATA_NAME) == 0)
 								{
 									if(zipFile.name.indexOf("/") > 0)
 									{
-										var name:String = zipFile.name.replace(/\.\w+$/,"");
-										name = name.split("/").pop();
+										name = zipFile.name.replace(/\.\w+$/,"");
+										name = name.substr(GlobalConstValues.TEXTURE_ATLAS_DATA_NAME.length + 1);
 										if(!images)
 										{
 											images = {};
@@ -181,24 +233,44 @@ package control
 										var textureBytes:ByteArray = zipFile.data;
 									}
 								}
+								else if(zipFile.name.indexOf(GlobalConstValues.SPINE_FOLDER) == 0)
+								{
+									if(!_spineObject)
+									{
+										_spineObject = {};
+									}
+									name = zipFile.name.replace(/\.\w+$/,"");
+									name = name.substr(GlobalConstValues.SPINE_FOLDER.length + 1);
+									object = com.adobe.serialization.json.JSON.decode(zipFile.data.toString());
+									_spineObject[name] = object;
+								}
 							}
 						}
 						zip.clear();
+						
+						switch(_fileType)
+						{
+							case 1:
+								if(!_spineObject)
+								{
+									throw new Error("break");
+								}
+								break;
+						}
 						if(textureBytes)
 						{
 							//_textureBytes
-							MessageDispatcher.dispatchEvent(MessageDispatcher.LOAD_FILEDATA_COMPLETE, _skeletonXMLProxy, textureBytes);
+							MessageDispatcher.dispatchEvent(MessageDispatcher.LOAD_FILEDATA_COMPLETE, _xmlDataProxy, textureBytes);
 							return;
 						}
 						else if(images)
 						{
-							_images = images;
-							spliceBitmapDataStep(null);
+							BitmapDataUtil.byteArrayMapToBitmapDataMap(images, bitmapDataMapComplete);
 							return;
 						}
 						break;
 					}
-					catch(_e:Error)
+					catch(e:Error)
 					{
 						break;
 					}
@@ -208,47 +280,38 @@ package control
 			MessageDispatcher.dispatchEvent(MessageDispatcher.LOAD_FILEDATA_ERROR);
 		}
 		
-		private var _images:Object;
-		private var _imageName:String;
-		
-		private function spliceBitmapDataStep(e:Event):void
+		private function bitmapDataMapComplete(bitmapDataMap:Object):void
 		{
-			if(e)
+			var rectMap:Object = {};
+			for(var name:String in bitmapDataMap)
 			{
-				e.target.removeEventListener(Event.COMPLETE, spliceBitmapDataStep);
-				_images[_imageName] = e.target.content.bitmapData;
+				var bitmapData:BitmapData = bitmapDataMap[name];
+				var rect:Rectangle = new Rectangle(0, 0, bitmapData.width, bitmapData.height);
+				rectMap[name] = rect;
 			}
-			for (var name:String in _images)
+			
+			if(_spineObject)
 			{
-				var imageBytes:ByteArray = _images[name] as ByteArray;
-				if(imageBytes)
-				{
-					_imageName = name;
-					break;
-				}
-			}
-			if(imageBytes)
-			{
-				var loader:Loader = new Loader();
-				loader.contentLoaderInfo.addEventListener(Event.COMPLETE, spliceBitmapDataStep);
-				loader.loadBytes(imageBytes, _loaderContext);
+				_xmlDataProxy.createTextureAtlas(rectMap, null, "spine");
+				_xmlDataProxy.xml = formatSpineData(_spineObject, _xmlDataProxy.textureAtlasXML, "spine");
 			}
 			else
 			{
-				
-				MessageDispatcher.dispatchEvent(
-					MessageDispatcher.LOAD_FILEDATA_COMPLETE, 
-					_skeletonXMLProxy, 
-					PNGEncoder.encode(
-						BitmapDataUtil.getMergeBitmapData(
-							_images,
-							_skeletonXMLProxy.getSubTextureRectDic(),
-							_skeletonXMLProxy.textureAtlasWidth,
-							_skeletonXMLProxy.textureAtlasHeight
-						)
-					)
-				);
+				_xmlDataProxy.createTextureAtlas(rectMap);
 			}
+			
+			MessageDispatcher.dispatchEvent(
+				MessageDispatcher.LOAD_FILEDATA_COMPLETE, 
+				_xmlDataProxy, 
+				PNGEncoder.encode(
+					BitmapDataUtil.getMergeBitmapData(
+						bitmapDataMap,
+						_xmlDataProxy.getSubTextureRectMap(),
+						_xmlDataProxy.textureAtlasWidth,
+						_xmlDataProxy.textureAtlasHeight
+					)
+				)
+			);
 		}
 	}
 }

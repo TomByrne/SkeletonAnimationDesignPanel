@@ -11,64 +11,76 @@
 			import message.MessageDispatcher;
 			
 			import model.ImportDataProxy;
-			import model.SettingDataProxy;
 			
 			private var _importDataProxy:ImportDataProxy = ImportDataProxy.getInstance();
 			
 			private function addedToStageHandler(event:Event):void
 			{
-				sliderDurationTo.addEventListener(Event.CHANGE, valueChangeHandler);
-				numDurationTo.addEventListener(Event.CHANGE, valueChangeHandler);
+				sliderFadeInTime.addEventListener(Event.CHANGE, valueChangeHandler);
+				numFadeInTime.addEventListener(Event.CHANGE, valueChangeHandler);
 				
-				sliderDurationTween.addEventListener(Event.CHANGE, valueChangeHandler);
-				numDurationTween.addEventListener(Event.CHANGE, valueChangeHandler);
+				sliderAnimationScale.addEventListener(Event.CHANGE, valueChangeHandler);
+				numAnimationScale.addEventListener(Event.CHANGE, valueChangeHandler);
+				
+				numLoop.addEventListener(Event.CHANGE, valueChangeHandler);
 				
 				sliderTweenEasing.addEventListener(Event.CHANGE, valueChangeHandler);
+				checkTweenEasing.addEventListener(Event.CHANGE, valueChangeHandler);
 				
-				checkLoop.addEventListener(Event.CHANGE, valueChangeHandler);
-				
-				MessageDispatcher.addEventListener(MessageDispatcher.CHANGE_MOVEMENT_DATA, commandHandler);	
+				MessageDispatcher.addEventListener(MessageDispatcher.SELECT_ANIMATION, commandHandler);	
+				MessageDispatcher.addEventListener(MessageDispatcher.CHANGE_ANIMATION_DATA, commandHandler);	
 			}
 			
 			private function commandHandler(e:Message):void
 			{
+				if(e.parameters[0] != _importDataProxy.armatureProxy)
+				{
+					return;
+				}
 				switch(e.type)
 				{
-					case MessageDispatcher.CHANGE_MOVEMENT_DATA:
-						var durationTo:Number = _importDataProxy.animationDataProxy.durationTo;
-						var durationTween:Number = _importDataProxy.animationDataProxy.durationTween;
-						if(durationTo < 0)
+					case MessageDispatcher.SELECT_ANIMATION:
+					case MessageDispatcher.CHANGE_ANIMATION_DATA:
+						var isMultipleFrameAnimation:Boolean = _importDataProxy.armatureProxy.isMultipleFrameAnimation;
+						
+						var fadeTime:Number = _importDataProxy.armatureProxy.fadeInTime;
+						var animationScale:Number = _importDataProxy.armatureProxy.animationScale;
+						var loop:int = _importDataProxy.armatureProxy.loop;
+						var tweenEasing:Number = _importDataProxy.armatureProxy.tweenEasing;
+						
+						numFadeInTime.value = fadeTime;
+						sliderFadeInTime.value = fadeTime;
+						
+						if(isMultipleFrameAnimation)
 						{
-							numDurationTo.enabled = false;
-							sliderDurationTo.enabled = false;
-						}
-						else
-						{
-							numDurationTo.value = durationTo;
-							numDurationTo.enabled = true;
-							sliderDurationTo.value = durationTo;
-							sliderDurationTo.enabled = true;
-						}
-						if(durationTween < 0)
-						{
-							numDurationTween.enabled = false;
-							sliderDurationTween.enabled = false;
-							checkLoop.selected = false;
-							checkLoop.enabled = false;
-							sliderTweenEasing.enabled = false;
-						}
-						else
-						{
-							numDurationTween.value = durationTween;
-							numDurationTween.enabled = true;
-							sliderDurationTween.value = durationTween;
-							sliderDurationTween.enabled = true;
-							checkLoop.selected = _importDataProxy.animationDataProxy.loop;
-							checkLoop.enabled = true;
-							sliderTweenEasing.value = _importDataProxy.animationDataProxy.tweenEasing;
-							sliderTweenEasing.enabled = true;
+							numAnimationScale.value = animationScale * 100;
+							numAnimationScale.enabled = true;
+							sliderAnimationScale.value = animationScale * 100;
+							sliderAnimationScale.enabled = true;
+							numLoop.enabled = true;
+							numLoop.value = loop;
 							
-							_importDataProxy.animationDataProxy.loop;
+							checkTweenEasing.enabled = true;
+							if(isNaN(tweenEasing))
+							{
+								checkTweenEasing.selected = false;
+								sliderTweenEasing.enabled = false;
+								sliderTweenEasing.value = 0;
+							}
+							else
+							{
+								checkTweenEasing.selected = true;
+								sliderTweenEasing.enabled = true;
+								sliderTweenEasing.value = tweenEasing;
+							}
+						}
+						else
+						{
+							numAnimationScale.enabled = false;
+							sliderAnimationScale.enabled = false;
+							numLoop.enabled = false;
+							checkTweenEasing.enabled = false;
+							sliderTweenEasing.enabled = false;
 						}
 						break;
 				}
@@ -78,32 +90,38 @@
 			{
 				switch(e.target)
 				{
-					case sliderDurationTo:
-						_importDataProxy.animationDataProxy.durationTo = sliderDurationTo.value;
-						numDurationTo.value = _importDataProxy.animationDataProxy.durationTo;
-						sliderDurationTo.value = _importDataProxy.animationDataProxy.durationTo;
+					case sliderFadeInTime:
+						_importDataProxy.armatureProxy.fadeInTime = sliderFadeInTime.value;
+						sliderFadeInTime.value = numFadeInTime.value = _importDataProxy.armatureProxy.fadeInTime;
 						break;
-					case numDurationTo:
-						_importDataProxy.animationDataProxy.durationTo = numDurationTo.value;
-						numDurationTo.value = _importDataProxy.animationDataProxy.durationTo;
-						sliderDurationTo.value = _importDataProxy.animationDataProxy.durationTo;
+					case numFadeInTime:
+						_importDataProxy.armatureProxy.fadeInTime = numFadeInTime.value;
+						sliderFadeInTime.value = numFadeInTime.value = _importDataProxy.armatureProxy.fadeInTime;
 						break;
-					case sliderDurationTween:
-						_importDataProxy.animationDataProxy.durationTween = sliderDurationTween.value;
-						numDurationTween.value = _importDataProxy.animationDataProxy.durationTween;
-						sliderDurationTween.value = _importDataProxy.animationDataProxy.durationTween;
+					case sliderAnimationScale:
+						_importDataProxy.armatureProxy.animationScale = sliderAnimationScale.value * 0.01;
+						sliderAnimationScale.value = numAnimationScale.value = _importDataProxy.armatureProxy.animationScale * 100;
 						break;
-					case numDurationTween:
-						_importDataProxy.animationDataProxy.durationTween = numDurationTween.value;
-						numDurationTween.value = _importDataProxy.animationDataProxy.durationTween;
-						sliderDurationTween.value = _importDataProxy.animationDataProxy.durationTween;
+					case numAnimationScale:
+						_importDataProxy.armatureProxy.animationScale = numAnimationScale.value * 0.01;
+						sliderAnimationScale.value = numAnimationScale.value = _importDataProxy.armatureProxy.animationScale * 100;
+						break;
+					case numLoop:
+						_importDataProxy.armatureProxy.loop = numLoop.value;
+						numLoop.value = _importDataProxy.armatureProxy.loop;
 						break;
 					case sliderTweenEasing:
-						_importDataProxy.animationDataProxy.tweenEasing = sliderTweenEasing.value;
+						_importDataProxy.armatureProxy.tweenEasing = sliderTweenEasing.value;
 						break;
-					case checkLoop:
-						_importDataProxy.animationDataProxy.loop = checkLoop.selected;
-						MessageDispatcher.dispatchEvent(MessageDispatcher.CHANGE_MOVEMENT_LOOP_DATA);
+					case checkTweenEasing:
+						if(checkTweenEasing.selected)
+						{
+							_importDataProxy.armatureProxy.tweenEasing = 0;
+						}
+						else
+						{
+							_importDataProxy.armatureProxy.tweenEasing = NaN;
+						}
 						break;
 				}
 			}
@@ -116,41 +134,54 @@
 	</s:Rect>
 	<s:Scroller width="100%" height="100%" horizontalScrollPolicy="off">
 		<s:VGroup width="100%" gap="0" paddingLeft="6" paddingRight="6">
-			<s:Label width="100%" height="24" verticalAlign="bottom"
-					 text="{resourceManager.getString('resources','totalTime')}"
+			<s:HGroup width="100%" verticalAlign="middle">
+				<s:Label width="100%" height="24" verticalAlign="middle"
+						 text="{resourceManager.getString('resources','totalTimeSec')}"
+						 />
+				<s:Label text="{ImportDataProxy.getInstance().armatureProxy.durationScaled}"/>
+			</s:HGroup>
+			<s:Label width="100%" height="24" verticalAlign="middle"
+					 text="{resourceManager.getString('resources','totalTimeScale')}"
 					 />
 			<s:HGroup width="100%" verticalAlign="middle">
-				<s:HSlider id="sliderDurationTween" width="100%"
-						   minimum="0" maximum="10" snapInterval="0.01"
+				<s:HSlider id="sliderAnimationScale" width="100%"
+						   minimum="0" maximum="2000" snapInterval="1"
 						   />
-				<s:NumericStepper id="numDurationTween" width="60" height="24" cornerRadius="0" textAlign="right"
-								  maximum="3000" minimum="0" snapInterval="0.01"
+				<s:NumericStepper id="numAnimationScale" width="60" height="24" cornerRadius="0" textAlign="right"
+								  maximum="100000" minimum="0" snapInterval="1"
 								  />
 			</s:HGroup>
-			<s:Label width="100%" height="24" verticalAlign="bottom"
+			
+			<s:Label width="100%" height="24" verticalAlign="middle"
 					 text="{resourceManager.getString('resources','blendingTime')}"
 					 />
 			<s:HGroup width="100%" verticalAlign="middle">
-				<s:HSlider id="sliderDurationTo" width="100%"
+				<s:HSlider id="sliderFadeInTime" width="100%"
 						   minimum="0" maximum="10" snapInterval="0.01"
 						   />
-				<s:NumericStepper id="numDurationTo" width="60" height="24" cornerRadius="0" textAlign="right"
+				<s:NumericStepper id="numFadeInTime" width="60" height="24" cornerRadius="0" textAlign="right"
 								  maximum="3000" minimum="0" snapInterval="0.01"
 								  />
 			</s:HGroup>
 			
-			<s:Label width="100%" height="24" verticalAlign="bottom"
+			<s:Label width="100%" height="24" verticalAlign="middle"
 					 text="{resourceManager.getString('resources','keyFrameEase')}"
 					 />
-			<s:HGroup width="100%" verticalAlign="middle">
+			<s:HGroup width="100%" verticalAlign="middle" height="24">
 				<s:HSlider id="sliderTweenEasing" width="100%"
-						   minimum="-1.1" maximum="2" snapInterval="0.05"
+						   minimum="-1" maximum="2" snapInterval="0.05"
 						   />
-				<s:Spacer width="60" height="24"/>
+				<s:CheckBox id="checkTweenEasing" width="15" label=""/>
 			</s:HGroup>
 			
-			<s:CheckBox id="checkLoop" width="100%" height="24"
-						label="{resourceManager.getString('resources','loop')}"/>
+			<s:HGroup width="100%" verticalAlign="middle">
+				<s:Label width="100%" height="24" verticalAlign="middle"
+						 text="{resourceManager.getString('resources','loop')}"
+						 />
+				<s:NumericStepper id="numLoop" width="60" height="24" cornerRadius="0" textAlign="right"
+								  maximum="100" minimum="0" snapInterval="1"
+								  />
+			</s:HGroup>
 			
 		</s:VGroup>
 	</s:Scroller>

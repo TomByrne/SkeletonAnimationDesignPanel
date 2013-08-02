@@ -15,20 +15,17 @@
 			import model.ImportDataProxy;
 			import model.SettingDataProxy;
 			
-			import mx.events.CloseEvent;
-			import mx.events.FlexEvent;
 			import mx.managers.PopUpManager;
 			
 			private function importData():void
 			{
-				DBGATrackerManager.tracker.trackEvent("importWindow", "import", "dataSource", SettingDataProxy.getInstance().dataImportID);
+				DBGATrackerManager.trackEvent("ImportWindow:ImportData", "ImportWindow:ImportData:"+String(SettingDataProxy.importArrayCollectionSource[SettingDataProxy.getInstance().dataImportID]));
 				
 				MessageDispatcher.addEventListener(MessageDispatcher.LOAD_FLADATA, commandHandler);
 				MessageDispatcher.addEventListener(MessageDispatcher.LOAD_FILEDATA, commandHandler);
 				switch(SettingDataProxy.getInstance().dataImportID)
 				{
 					case 0:
-						
 						ImportCommand.instance.importFLAData(false, false);
 						break;
 					case 1:
@@ -36,6 +33,9 @@
 						break;
 					case 2:
 						ImportCommand.instance.importFileData(false);
+						break;
+					case 3:
+						ImportCommand.instance.importFileData(false, null, 1);
 						break;
 				}
 			}
@@ -48,7 +48,7 @@
 			private function closeWindow():void
 			{
 				
-				DBGATrackerManager.tracker.trackPageview("/");
+				DBGATrackerManager.trackPageview("/");
 				
 				MessageDispatcher.removeEventListener(MessageDispatcher.LOAD_FLADATA, commandHandler);
 				MessageDispatcher.removeEventListener(MessageDispatcher.LOAD_FILEDATA, commandHandler);
@@ -57,7 +57,7 @@
 			
 			private function closeBtn_onClick(event:MouseEvent):void
 			{
-				DBGATrackerManager.tracker.trackEvent("importWindow", "close");
+				DBGATrackerManager.trackEvent("ImportWindow:Close", "ImportWindow:Close");
 				closeWindow();
 			}
 			
