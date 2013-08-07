@@ -1,8 +1,6 @@
 package message
 {
-	import flash.events.Event;
 	import flash.events.EventDispatcher;
-	import flash.events.IEventDispatcher;
 	
 	public class MessageDispatcher extends EventDispatcher
 	{
@@ -34,6 +32,7 @@ package message
 		static public const EXPORT_ERROR:String = "exportError";
 		static public const EXPORT_COMPLETE:String = "exportComplete";
 		
+		public static const FLA_TEXTURE_ATLAS_NO_CONTENT:String = "flaTextureAtlasNoContent";
 		public static const FLA_TEXTURE_ATLAS_SWF_LOADED:String = "flaTextureAtlasSWFLoaded";
 		
 		public static const SETTING_DATA_CHANGE:String = "settingDataChange";

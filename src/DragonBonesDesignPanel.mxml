@@ -64,6 +64,8 @@
 				
 				MessageDispatcher.addEventListener(MessageDispatcher.IMPORT_COMPLETE, commandHandler);
 				
+				MessageDispatcher.addEventListener(MessageDispatcher.FLA_TEXTURE_ATLAS_NO_CONTENT, commandHandler);
+				
 				MessageDispatcher.addEventListener(MessageDispatcher.EXPORT, commandHandler);
 				MessageDispatcher.addEventListener(MessageDispatcher.EXPORT_CANCEL, commandHandler);
 				MessageDispatcher.addEventListener(MessageDispatcher.EXPORT_ERROR, commandHandler);
@@ -194,6 +196,10 @@
 					case MessageDispatcher.EXPORT_ERROR:
 						clearAlert();
 						_alert = Alert.show(resourceManager.getString('resources', 'exportError'));
+						break;
+					case MessageDispatcher.FLA_TEXTURE_ATLAS_NO_CONTENT:
+						clearAlert();
+						_alert = Alert.show(resourceManager.getString('resources', 'noContent'));
 						break;
 					case MessageDispatcher.EXPORT_COMPLETE:
 						clearAlert();

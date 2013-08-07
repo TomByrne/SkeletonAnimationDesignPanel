@@ -7,6 +7,12 @@
 		 >
 	<fx:Script>
 		<![CDATA[
+			import flash.filters.GlowFilter;
+			import flash.ui.Mouse;
+			import flash.ui.MouseCursor;
+			
+			import mx.effects.Pause;
+			
 			import dragonBones.Armature;
 			import dragonBones.Bone;
 			import dragonBones.Slot;
@@ -14,17 +20,11 @@
 			import dragonBones.factorys.NativeFactory;
 			import dragonBones.objects.BoneData;
 			
-			import flash.filters.GlowFilter;
-			import flash.ui.Mouse;
-			import flash.ui.MouseCursor;
-			
 			import message.Message;
 			import message.MessageDispatcher;
 			
 			import model.ArmatureProxy;
 			import model.SettingDataProxy;
-			
-			import mx.effects.Pause;
 			
 			import utils.getPointTarget;
 			
@@ -163,6 +163,8 @@
 				scrollerViewer.verticalScrollBar.addEventListener(MouseEvent.MOUSE_DOWN, scrollBarHandler);
 				
 				MessageDispatcher.addEventListener(MessageDispatcher.SETTING_DATA_CHANGE, settingHandler);
+				
+				background.color = SettingDataProxy.getInstance().backgroundColor;
 			}
 			
 			private function settingHandler(e:Message):void

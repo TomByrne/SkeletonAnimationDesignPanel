@@ -83,9 +83,14 @@ package control
 		private function loaderHandler(e:Event):void
 		{
 			var loaderInfo:LoaderInfo = e.target as LoaderInfo;
-			loaderInfo.addEventListener(Event.COMPLETE, loaderHandler);
+			loaderInfo.removeEventListener(Event.COMPLETE, loaderHandler);
 			var content:DisplayObjectContainer = loaderInfo.content as DisplayObjectContainer;
 			content = content.getChildAt(0) as DisplayObjectContainer;
+			
+			if(!content){
+				MessageDispatcher.dispatchEvent(MessageDispatcher.FLA_TEXTURE_ATLAS_NO_CONTENT);
+				return;
+			}
 			
 			var rectMap:Object = {};
 			var i:int = content.numChildren;
