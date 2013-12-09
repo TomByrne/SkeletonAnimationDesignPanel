@@ -53,6 +53,7 @@ var A_TWEEN_ROTATE ="tweenRotate";
 var A_ACTION = "action";
 var A_HIDE = "hide";
 var A_MASK = "mask";
+var A_BLENDMODE = "blendMode";
 
 var A_BACKGROUND_COLOR = "backgroundColor";
 var A_WIDTH = "width";
@@ -82,6 +83,7 @@ var ACTION_PREFIX = "#";
 var NO_EASING = "^";
 var DELIM_CHAR = "|";
 var UNDERLINE_CHAR = "_";
+var NORMAL_BLEND = "normal";
 
 var PANEL_FOLDER = "DragonBonesDesignPanel";
 var ARMATURE_DATA = "armatureData";
@@ -600,7 +602,7 @@ function getBoneXML(armatureXML, name, item, frameXML)
 	return xml;
 }
 
-function getSlotXML(armatureXML, name, item, frameXML)
+function getSlotXML(armatureXML, name, item, frameXML, blendMode)
 {
 	var skinXML = armatureXML[SKIN][0];
 	var xml = skinXML[SLOT].(@name == name)[0];
@@ -613,6 +615,9 @@ function getSlotXML(armatureXML, name, item, frameXML)
 				{A_Z_ORDER}={frameXML.@[A_Z_ORDER]}
 			/>;
 			
+		if(blendMode!=NORMAL_BLEND){
+			xml.@[A_BLENDMODE] = blendMode;
+		}
 		appendXML(skinXML, xml);
 	}
 	return xml;
@@ -878,9 +883,8 @@ function generateFrame(item, frame, boneName, symbol, zOrder, noAutoEasing, arma
 			frameXML.appendChild(colorTransformXML);
 		}
 	}
-	
 	var boneXML = getBoneXML(armatureXML, boneName, item, frameXML);
-	var slotXML = getSlotXML(armatureXML, boneName, item, frameXML);
+	var slotXML = getSlotXML(armatureXML, boneName, item, frameXML, symbol.blendMode);
 	
 	var imageItem = symbol.libraryItem;
 	var imageName = formatName(imageItem);

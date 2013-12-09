@@ -17,6 +17,7 @@
 			import cloud.DBNetworkUtils;
 			import cloud.events.DBCloudEvent;
 			import cloud.events.DBNetworkEvent;
+			import flash.events.Event;
 			
 			import control.CopyBoneAndAnimationCommand;
 			import control.ImportCommand;
@@ -89,7 +90,7 @@
 				contextMenu.hideBuiltInItems();
 				if(Capabilities.isDebugger){
 					var reloadItem:ContextMenuItem = new ContextMenuItem("Reload JSFL")
-					reloadItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e){
+					reloadItem.addEventListener(ContextMenuEvent.MENU_ITEM_SELECT, function(e:Event):void{
 						JSFLProxy.getInstance().reloadJSFL();
 					});
 					contextMenu.customItems.push(reloadItem);
