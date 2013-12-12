@@ -614,8 +614,8 @@ function getSlotXML(armatureXML, name, item, frameXML, blendMode)
 				{A_PARENT}={name}
 				{A_Z_ORDER}={frameXML.@[A_Z_ORDER]}
 			/>;
-			
-		if(blendMode!=NORMAL_BLEND){
+		
+		if(blendMode && blendMode!=NORMAL_BLEND){
 			xml.@[A_BLENDMODE] = blendMode;
 		}
 		appendXML(skinXML, xml);
